@@ -20,7 +20,7 @@ def gps_transform(func):
     and return a series which are the features for that task
     '''
     def feature_func(df): # Accepts just a single dataframe!
-        features = pd.Series(dict(label=df.task_label.mode(), name=df.name.mode(), start_time=df.start_time.mode(), end_time=df.end_time.mode()))
+        features = pd.Series(dict(label=df.task_label.max(), name=df.name.max(), start_time=df.start_time.max(), end_time=df.end_time.max())) # These are all the same so max just gets a single value
         features = pd.concat((features, func(df)))
         return features
     gps_transform.funcs[func.__name__] = feature_func
@@ -91,7 +91,9 @@ def chunked(df):
     # Get mean, std for now
     mean = pd.concat(df[col].groupby(df.index/60).mean() for col in ['position_x', 'position_y', 'position_z','velocity'])
     std  = pd.concat(df[col].groupby(df.index/60).std()  for col in ['position_x', 'position_y', 'position_z','velocity'])
-    return pd.concat((mean, std))
+    features = pd.concat((mean, std))
+    features[features.isnull()] = 0
+    return features
 
 
 @gps_transform
