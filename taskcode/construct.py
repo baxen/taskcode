@@ -98,19 +98,12 @@ def consecutives():
     raise KeyError("consecutives not yet implemented")
     
 
-@cached
-def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None):
+def create_gps_pickles():
     '''
-    Return a pandas data frame that stores the features and labels for each task.
-
-    For now only gps data is supported.
-
-    Kwargs:
-    gps_reduce -- name of the transform of gps three vectors into reduced vectors (any number of outputs)!
-                  Accepts the name of any function marked @gps
+    Create a series of files that store the subset of gps data for each distinct task.
     '''
     
-    # First we load the timestamps DF - it will be extended into the whole dataset
+    # First we load the timestamps DF (just 100 for testing)
     df = pd.read_pickle('TaskCodeTimestamps.pkl')[:100]
 
     # Grab gps data for each task, processing if specified
@@ -123,11 +116,37 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None):
     gps['name'] = gps.node_id.map(nodes)
 
     # Build an extension to the df by creating feature vectors from (transformed) x,y,z data
-    extension = None
+    for index, name, start, end, task in itertools.izip(df.index, df.name, df.start_time, df.end_time, df.task):
+        sub_gps = gps[(gps.name == name) & (gps.position_update_timestamp > start) & (gps.position_update_timestamp < end)].copy()
+        if not len(sub_gps):
+            continue
+        sub_gps['start_time'] = start
+        sub_gps['end_time'] = end
+        sub_gps['task_id'] = index
+        sub_gps['task_label'] = task
+        sub_gps.to_pickle('gps_{:06d}.pkl'.format(index))
+
+@cached
+def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None):
+    '''
+    Return a pandas data frame that stores the features and labels for each task.
+
+    For now only gps data is supported.
+
+    Kwargs:
+    gps_reduce -- name of the transform of gps three vectors into reduced vectors (any number of outputs)!
+                  Accepts the name of any function marked @gps
+    '''
+
+    raise ValueError("Not yet implemented!")
+    
+    # Coming back to this from the subfiles created above
+    # Build an extension to the df by creating feature vectors from (transformed) x,y,z data
     for index, name, start, end in itertools.izip(df.index, df.name, df.start_time, df.end_time):
         sub_gps = gps[(gps.name == name) & (gps.position_update_timestamp > start) & (gps.position_update_timestamp < end)]
         if not len(sub_gps):
             continue
+        # For references this was the code to make features
         features = gps_transform.funcs[gps_reduce](sub_gps)
         if extension is None:
             extension = pd.DataFrame(columns=features.index, index=df.index)
@@ -139,8 +158,7 @@ def main():
     '''
     Quick tests
     '''
-    df = load_tasks()
-    print df.head()
+    create_gps_pickles()
 
 
 if __name__ == "__main__":
