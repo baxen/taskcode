@@ -5,6 +5,7 @@ Will handle various attempts at dimensionality reduction that we come up with by
 '''
 
 import os
+import glob
 import pickle
 import itertools
 
@@ -18,8 +19,12 @@ def gps_transform(func):
     These functions take a dataframe of gps data matched to a task
     and return a series which are the features for that task
     '''
-    gps_transform.funcs[func.__name__] = func
-    return func
+    def feature_func(df): # Accepts just a single dataframe!
+        features = pd.Series(dict(label=df.task_label.mode(), name=df.name.mode(), start_time=df.start_time.mode(), end_time=df.end_time.mode()))
+        features = pd.concat((features, func(df)))
+        return features
+    gps_transform.funcs[func.__name__] = feature_func
+    return feature_func
 
 gps_transform.funcs = {}
 
@@ -33,15 +38,15 @@ def cached(func):
     '''
     def cached_func(*args, **kwargs):
         c = kwargs.pop('cache', False)
-        context = hash(frozenset(kwargs.items())) 
+        context = "{}.pkl".format(hash(frozenset(kwargs.items())))
         if c:
             # Attempt to retrieve from file
-            if os.path.exists(context + '.pkl'):
-                return pd.read_pickle(context + '.pkl')
+            if os.path.exists(context):
+                return pd.read_pickle(context)
         df = func(*args, **kwargs)
         if c:
             # Load to file if cache specified
-            df.to_pickle(context + '.pkl')
+            df.to_pickle(context)
         return df
     return cached_func
 
@@ -127,7 +132,7 @@ def create_gps_pickles():
         sub_gps.to_pickle('gps_{:06d}.pkl'.format(index))
 
 @cached
-def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None):
+def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
     '''
     Return a pandas data frame that stores the features and labels for each task.
 
@@ -138,25 +143,26 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None):
                   Accepts the name of any function marked @gps
     '''
 
-    raise ValueError("Not yet implemented!")
+    # First determine the indices from the pickle files
+    fnames = glob.glob('gps_*.pkl')
+    if n is not None:
+        fnames = fnames[:n]
+    index = pd.Series(int(fname.split("_")[1].split(".")[0]) for fname in fnames)
     
-    # Coming back to this from the subfiles created above
-    # Build an extension to the df by creating feature vectors from (transformed) x,y,z data
-    for index, name, start, end in itertools.izip(df.index, df.name, df.start_time, df.end_time):
-        sub_gps = gps[(gps.name == name) & (gps.position_update_timestamp > start) & (gps.position_update_timestamp < end)]
-        if not len(sub_gps):
-            continue
-        # For references this was the code to make features
-        features = gps_transform.funcs[gps_reduce](sub_gps)
-        if extension is None:
-            extension = pd.DataFrame(columns=features.index, index=df.index)
-        extension.loc[index] = features
-    return pd.concat((df, extension), axis=1)
+    df = None
+    for ix, fname in itertools.izip(index,fnames):
+        # Grab a dataframe which represents a single task
+        gps_task = pd.read_pickle(fname)
+        features = gps_transform.funcs[gps_reduce](gps_task)
+        if df is None:
+            df = pd.DataFrame(columns=features.index, index=index)
+        df.loc[ix] = features
+    return df
     
     
 def main():
     '''
-    Quick tests
+    Make the gps pickles which are used by other methods.
     '''
     create_gps_pickles()
 
