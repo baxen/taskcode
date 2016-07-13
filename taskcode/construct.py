@@ -67,7 +67,7 @@ def distance(*args):
     '''
     N-dim euclidean distance
     '''
-    return np.sqrt(sum(a*a for a in args))
+    return np.sqrt(np.sum(a*a for a in args))
 
 @gps_transform
 def chunked(df):
@@ -130,7 +130,7 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None):
             continue
         features = gps_transform.funcs[gps_reduce](sub_gps)
         if extension is None:
-            extension = pd.DataFrame(columns=features.index, index=gps.index)
+            extension = pd.DataFrame(columns=features.index, index=df.index)
         extension.loc[index] = features
     return pd.concat((df, extension), axis=1)
     
