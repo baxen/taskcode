@@ -111,7 +111,8 @@ def create_gps_pickles():
     '''
     
     # First we load the timestamps DF (just 100 for testing)
-    df = pd.read_pickle('data/TaskCodeTimestamps.pkl')[:100]
+    # df = pd.read_pickle('data/TaskCodeTimestamps.pkl')[:100]
+    df = pd.read_pickle('data/TaskCodeTimestamps.pkl')
 
     # Grab gps data for each task, processing if specified
     gps = pd.read_pickle('data/LocationData.pkl')
@@ -124,6 +125,7 @@ def create_gps_pickles():
 
     # Build an extension to the df by creating feature vectors from (transformed) x,y,z data
     for index, name, start, end, task in itertools.izip(df.index, df.name, df.start_time, df.end_time, df.task):
+        print "Processing task number " + str(index) + " out of " + str(len(df.index))
         sub_gps = gps[(gps.name == name) & (gps.position_update_timestamp > start) & (gps.position_update_timestamp < end)].copy()
         if not len(sub_gps):
             continue
