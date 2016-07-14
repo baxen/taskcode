@@ -17,12 +17,14 @@ def gps_transform(func):
     Decorator to mark function for use in gps dim reduction.
 
     These functions take a dataframe of gps data matched to a task
-    and return a series which are the features for that task
+    and return a _list_ of _pd.Series_ which are the features for each generated row
     '''
-    def feature_func(df): # Accepts just a single dataframe!
-        features = pd.Series(dict(label=df.task_label.max(), name=df.name.max(), start_time=df.start_time.max(), end_time=df.end_time.max())) # These are all the same so max just gets a single value
-        features = pd.concat((features, func(df)))
-        return features
+    def feature_func(df):
+        default_features = pd.Series(dict(label=df.task_label.max(), name=df.name.max(), start_time=df.start_time.max(), end_time=df.end_time.max())) # These are all the same so max just gets a single value
+        rows = []
+        for row in func(df):
+            rows.append(pd.concat((default_features, row)))
+        return rows
     gps_transform.funcs[func.__name__] = feature_func
     return feature_func
 
@@ -65,7 +67,7 @@ def padded(df):
     df.reindex(np.arange(8*3600, fill_value=0))
 
     # Now build a feature vector from it. It'll be big :(
-    return pd.concat(df.position_x, df.position_y, df.position_z)
+    return [pd.concat(df.position_x, df.position_y, df.position_z)]
     
 
 def distance(*args):
@@ -80,20 +82,40 @@ def chunked(df):
     Extract a few statistical values from time data chunked over an interval (1m).
     Keep an hour's worth.
     '''
-    # Clean up index to be just integers
-    # Keep only first on hour and pad out to one hour if necessary
-    df.index = range(len(df.index))
-    df = df.reindex(xrange(3600))
+    # First calcluate any new values
+    # Velocity is distance between consecutive points per sec
+    df['velocity'] = distance(df.position_x.diff(), df.position_y.diff(), df.position_z.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
 
-    # Velocity is distance between consecutive points (/s)
-    df['velocity'] = distance(df.position_x.diff(), df.position_y.diff(), df.position_z.diff())
-    
-    # Get mean, std for now
-    mean = pd.concat(df[col].groupby(df.index/60).mean() for col in ['position_x', 'position_y', 'position_z','velocity'])
-    std  = pd.concat(df[col].groupby(df.index/60).std()  for col in ['position_x', 'position_y', 'position_z','velocity'])
-    features = pd.concat((mean, std))
-    features[features.isnull()] = 0
-    return features
+    # List of columns to form features
+    cols = ['position_x','position_y','position_z','velocity']
+
+    # Apparently sometimes the gps data is not consecutive in seconds
+    # so we need to focus on timestamps and not indices
+    interval = pd.Timedelta('20m') # Length of interval for each output row
+    sub_interval = pd.Timedelta('1m') # Sub interval in which to sample derived quantities
+
+    rows = []
+
+
+    # Create a chunk containing all timestamps within one interval
+    lower = df.position_update_timestamp.min() 
+    upper = lower + interval
+    chunk = df[(df.position_update_timestamp > lower) & (df.position_update_timestamp < upper)].copy()
+
+    while len(chunk):
+        # Calculate values in the sub intervals for this chunk.
+        mean = pd.concat(df[col].groupby(((df.position_update_timestamp - df.position_update_timestamp.min())/pd.Timedelta('1m')).astype(int)).mean() for col in cols)
+        std = pd.concat(df[col].groupby(((df.position_update_timestamp - df.position_update_timestamp.min())/pd.Timedelta('1m')).astype(int)).std() for col in cols)
+        features = pd.concat((mean, std))
+        features[features.isnull()] = 0
+        features.index = range(len(features))
+        rows.append(features)
+
+        # Get the next chunk
+        lower,upper = lower+interval, upper+interval
+        chunk = df[(df.position_update_timestamp > lower) & (df.position_update_timestamp < upper)].copy()
+
+    return rows
 
 
 @gps_transform
@@ -149,16 +171,13 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
     fnames = glob.glob('gps_*.pkl')
     if n is not None:
         fnames = fnames[:n]
-    index = pd.Series(int(fname.split("_")[1].split(".")[0]) for fname in fnames)
     
-    df = None
-    for ix, fname in itertools.izip(index,fnames):
-        # Grab a dataframe which represents a single task
-        gps_task = pd.read_pickle(fname)
-        features = gps_transform.funcs[gps_reduce](gps_task)
-        if df is None:
-            df = pd.DataFrame(columns=features.index, index=index)
-        df.loc[ix] = features
+    # Because each of the input files can generate multiple rows depending on 
+    # the choice of transform, store all as a list first
+    rows = list(itertools.chain.from_iterable(gps_transform.funcs[gps_reduce](pd.read_pickle(fname)) for fname in fnames))
+    df = pd.DataFrame(index=range(len(rows)), columns=rows[0].index)
+    for i,row in enumerate(rows):
+        df.iloc[i] = row
     return df
     
     
