@@ -38,7 +38,7 @@ def cached(func):
     '''
     def cached_func(*args, **kwargs):
         c = kwargs.pop('cache', False)
-        context = "{}.pkl".format(hash(frozenset(kwargs.items())))
+        context = "data/{}.pkl".format(hash(frozenset(kwargs.items())))
         if c:
             # Attempt to retrieve from file
             if os.path.exists(context):
@@ -111,11 +111,11 @@ def create_gps_pickles():
     '''
     
     # First we load the timestamps DF (just 100 for testing)
-    df = pd.read_pickle('TaskCodeTimestamps.pkl')[:100]
+    df = pd.read_pickle('data/TaskCodeTimestamps.pkl')[:100]
 
     # Grab gps data for each task, processing if specified
-    gps = pd.read_pickle('LocationData.pkl')
-    with open('NameToNode.pkl','r') as infile:
+    gps = pd.read_pickle('data/LocationData.pkl')
+    with open('data/NameToNode.pkl','r') as infile:
         nodes = pickle.load(infile)
     nodes = dict((int(key), val) for key,val in nodes.iteritems())
 
@@ -131,7 +131,7 @@ def create_gps_pickles():
         sub_gps['end_time'] = end
         sub_gps['task_id'] = index
         sub_gps['task_label'] = task
-        sub_gps.to_pickle('gps_{:06d}.pkl'.format(index))
+        sub_gps.to_pickle('data/gps_{:06d}.pkl'.format(index))
 
 @cached
 def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
@@ -146,7 +146,7 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
     '''
 
     # First determine the indices from the pickle files
-    fnames = glob.glob('gps_*.pkl')
+    fnames = glob.glob('data/gps_*.pkl')
     if n is not None:
         fnames = fnames[:n]
     index = pd.Series(int(fname.split("_")[1].split(".")[0]) for fname in fnames)
