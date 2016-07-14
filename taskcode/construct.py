@@ -126,7 +126,6 @@ def consecutives():
     '''
     raise KeyError("consecutives not yet implemented")
     
-
 def create_gps_pickles():
     '''
     Create a series of files that store the subset of gps data for each distinct task.
@@ -147,7 +146,7 @@ def create_gps_pickles():
 
     # Build an extension to the df by creating feature vectors from (transformed) x,y,z data
     for index, name, start, end, task in itertools.izip(df.index, df.name, df.start_time, df.end_time, df.task):
-        sys.stdout.write('Processing task number {0} out of {1}\r'.format(index,len(df.index)))
+        sys.stdout.write('Processing task number {0} out of {1}\r'.format(index,df.index[-1]))
         sys.stdout.flush()
         sub_gps = gps[(gps.name == name) & (gps.position_update_timestamp > start) & (gps.position_update_timestamp < end)].copy()
         if not len(sub_gps):
@@ -158,6 +157,7 @@ def create_gps_pickles():
         sub_gps['task_label'] = task
         sub_gps.to_pickle('data/gps_{:06d}.pkl'.format(index))
     print
+
 @cached
 def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
     '''
@@ -177,7 +177,12 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
     
     # Because each of the input files can generate multiple rows depending on 
     # the choice of transform, store all as a list first
-    rows = list(itertools.chain.from_iterable(gps_transform.funcs[gps_reduce](pd.read_pickle(fname)) for fname in fnames))
+    reduced_gps = list()
+    for i,fname in enumerate(fnames):
+        sys.stdout.write('Processing file number {0} out of {1}\r'.format(i,len(fnames)))
+        sys.stdout.flush()
+        reduced_gps.append(gps_transform.funcs[gps_reduce](pd.read_pickle(fname)))
+    rows = list(itertools.chain.from_iterable(reduced_gps))
     df = pd.DataFrame(index=range(len(rows)), columns=rows[0].index)
     for i,row in enumerate(rows):
         df.iloc[i] = row
@@ -189,7 +194,7 @@ def main():
     Make the gps pickles which are used by other methods.
     '''
     create_gps_pickles()
-
+    df=load_tasks(cache=True)
 
 if __name__ == "__main__":
     main()
