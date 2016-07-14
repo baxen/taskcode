@@ -8,7 +8,7 @@ import os
 import glob
 import pickle
 import itertools
-
+import sys
 import pandas as pd
 import numpy as np
 
@@ -125,7 +125,8 @@ def create_gps_pickles():
 
     # Build an extension to the df by creating feature vectors from (transformed) x,y,z data
     for index, name, start, end, task in itertools.izip(df.index, df.name, df.start_time, df.end_time, df.task):
-        print "Processing task number " + str(index) + " out of " + str(len(df.index))
+        sys.stdout.write('Processing task number {0} out of {1}\r'.format(index,len(df.index)))
+        sys.stdout.flush()
         sub_gps = gps[(gps.name == name) & (gps.position_update_timestamp > start) & (gps.position_update_timestamp < end)].copy()
         if not len(sub_gps):
             continue
@@ -134,7 +135,7 @@ def create_gps_pickles():
         sub_gps['task_id'] = index
         sub_gps['task_label'] = task
         sub_gps.to_pickle('data/gps_{:06d}.pkl'.format(index))
-
+    print
 @cached
 def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
     '''
