@@ -8,7 +8,7 @@ import os
 import glob
 import pickle
 import itertools
-
+import sys
 import pandas as pd
 import numpy as np
 
@@ -40,7 +40,7 @@ def cached(func):
     '''
     def cached_func(*args, **kwargs):
         c = kwargs.pop('cache', False)
-        context = "{}.pkl".format(hash(frozenset(kwargs.items())))
+        context = "data/{}.pkl".format(hash(frozenset(kwargs.items())))
         if c:
             # Attempt to retrieve from file
             if os.path.exists(context):
@@ -133,11 +133,12 @@ def create_gps_pickles():
     '''
     
     # First we load the timestamps DF (just 100 for testing)
-    df = pd.read_pickle('TaskCodeTimestamps.pkl')[:100]
+    # df = pd.read_pickle('data/TaskCodeTimestamps.pkl')[:100]
+    df = pd.read_pickle('data/TaskCodeTimestamps.pkl')
 
     # Grab gps data for each task, processing if specified
-    gps = pd.read_pickle('LocationData.pkl')
-    with open('NameToNode.pkl','r') as infile:
+    gps = pd.read_pickle('data/LocationData.pkl')
+    with open('data/NameToNode.pkl','r') as infile:
         nodes = pickle.load(infile)
     nodes = dict((int(key), val) for key,val in nodes.iteritems())
 
@@ -146,6 +147,8 @@ def create_gps_pickles():
 
     # Build an extension to the df by creating feature vectors from (transformed) x,y,z data
     for index, name, start, end, task in itertools.izip(df.index, df.name, df.start_time, df.end_time, df.task):
+        sys.stdout.write('Processing task number {0} out of {1}\r'.format(index,len(df.index)))
+        sys.stdout.flush()
         sub_gps = gps[(gps.name == name) & (gps.position_update_timestamp > start) & (gps.position_update_timestamp < end)].copy()
         if not len(sub_gps):
             continue
@@ -153,8 +156,8 @@ def create_gps_pickles():
         sub_gps['end_time'] = end
         sub_gps['task_id'] = index
         sub_gps['task_label'] = task
-        sub_gps.to_pickle('gps_{:06d}.pkl'.format(index))
-
+        sub_gps.to_pickle('data/gps_{:06d}.pkl'.format(index))
+    print
 @cached
 def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
     '''
@@ -168,7 +171,7 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
     '''
 
     # First determine the indices from the pickle files
-    fnames = glob.glob('gps_*.pkl')
+    fnames = glob.glob('data/gps_*.pkl')
     if n is not None:
         fnames = fnames[:n]
     
