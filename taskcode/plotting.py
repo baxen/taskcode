@@ -5,6 +5,7 @@ Plotting tools for gps/accel data visualizations.
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
+import pandas as pd
 
 def errorband(x,y,yerr,ax=None, **kwargs):
     '''
@@ -23,6 +24,8 @@ def errorband(x,y,yerr,ax=None, **kwargs):
 
 def main():
     # Run a few examples
+
+    # Simple Data
     x = np.linspace(0,4*np.pi,30)
     y = np.sin(x) + 0.05*np.random.randn(30)
     yerr = 0.25*np.random.rand(30) + 0.1
@@ -31,3 +34,6 @@ def main():
     errorband(x,y,yerr,ax=ax, label='Example')
     plt.legend()
     plt.show()
+
+    
+    

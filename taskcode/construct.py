@@ -158,6 +158,7 @@ def create_gps_pickles():
         sub_gps.to_pickle('data/gps_{:06d}.pkl'.format(index))
     print
 
+
 @cached
 def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
     '''
@@ -193,7 +194,7 @@ def main():
     '''
     Make the gps pickles which are used by other methods.
     '''
-    create_gps_pickles()
+    #create_gps_pickles()
     df=load_tasks(cache=True)
 
 if __name__ == "__main__":
