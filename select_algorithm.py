@@ -26,8 +26,6 @@ def optimized_classifier(X, y, classifier, distributions, scorer='f1_weighted', 
     n_iter        -- The number of random iterations to try
     """
     # Make a pipeline out of the classifier, to allow for feature scaling in the first step.
-    # We use a robust scaler because many of the features we looked at had outliers
-    # for example ratings have long low tails.
 
     # Add prefix to parameters to support use in pipeline
     class_name = classifier.__class__.__name__.lower()
