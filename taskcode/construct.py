@@ -104,11 +104,19 @@ def chunked(df):
 
     while len(chunk):
         # Calculate values in the sub intervals for this chunk.
-        mean = pd.concat(chunk[col].groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/pd.Timedelta('1m')).astype(int)).mean() for col in cols)
-        std = pd.concat(chunk[col].groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/pd.Timedelta('1m')).astype(int)).std() for col in cols)
-        features = pd.concat((mean, std))
-        features[features.isnull()] = 0
+        means = []
+        for col in cols:
+            mean = chunk[col].groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/sub_interval).astype(int)).mean()
+            mean = mean.reindex(range(int(interval/sub_interval)), fill_value=0)
+            means.append(mean)
+        stds = []
+        for col in cols:
+            std = chunk[col].groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/sub_interval).astype(int)).std()
+            std = std.reindex(range(int(interval/sub_interval)), fill_value=0)
+            stds.append(std)
+        features = pd.concat((pd.concat(means), pd.concat(stds)))
         features.index = range(len(features))
+        
         rows.append(features)
 
         # Get the next chunk
