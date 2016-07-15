@@ -48,8 +48,10 @@ def optimized_classifier(X, y, classifier, distributions, scorer='f1_weighted', 
 
 def main():
     df = pd.read_pickle('data/133156838395276.pkl')
-    X = df.iloc[:,4:80]
+    X = df.iloc[:,4:60].astype(float)
+    #X[np.isnan(X)]=0.0
     y = df.label.values.astype(int)
+    print X.shape
     #X = np.random.normal(size=(1000,10))#np.asarray(df['feature_vector'])
     #y = np.random.choice(range(10),size=1000) #np.asarray(df['label'])
 

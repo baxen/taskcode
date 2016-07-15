@@ -12,6 +12,8 @@ import sys
 import pandas as pd
 import numpy as np
 
+from IPython import embed
+
 def gps_transform(func):
     '''
     Decorator to mark function for use in gps dim reduction.
@@ -84,11 +86,13 @@ def chunked(df):
     '''
     # First calcluate any new values
     # Velocity is distance between consecutive points per sec
-    df['velocity'] = distance(df.position_x.diff(), df.position_y.diff(), df.position_z.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
-
+    # df['velocity'] = distance(df.position_x.diff(), df.position_y.diff(), df.position_z.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['velocity'] = distance(df.position_x.diff(), df.position_y.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    
     # List of columns to form features
-    cols = ['position_x','position_y','position_z','velocity']
-
+    # cols = ['position_x','position_y','position_z','velocity']
+    cols = ['position_x','position_y','velocity']
+    
     # Apparently sometimes the gps data is not consecutive in seconds
     # so we need to focus on timestamps and not indices
     interval = pd.Timedelta('20m') # Length of interval for each output row
@@ -105,24 +109,25 @@ def chunked(df):
     while len(chunk):
         # Calculate values in the sub intervals for this chunk.
         means = []
+        moveon=False
         for col in cols:
             mean = chunk[col].groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/sub_interval).astype(int)).mean()
-            mean = mean.reindex(range(int(interval/sub_interval)), fill_value=0)
+            if (len(mean) < 20) or (mean.var()==0.0):
+                moveon=True
+            mean = mean.reindex(range(int(interval/sub_interval)), method='nearest')
             means.append(mean)
         stds = []
+        # print moveon
         for col in cols:
             std = chunk[col].groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/sub_interval).astype(int)).std()
-            std = std.reindex(range(int(interval/sub_interval)), fill_value=0)
+            std = std.reindex(range(int(interval/sub_interval)), method='nearest')
             stds.append(std)
         features = pd.concat((pd.concat(means), pd.concat(stds)))
         features.index = range(len(features))
-        
-        rows.append(features)
-
         # Get the next chunk
         lower,upper = lower+interval, upper+interval
         chunk = df[(df.position_update_timestamp > lower) & (df.position_update_timestamp < upper)].copy()
-
+        if not moveon: rows.append(features)
     return rows
 
 
@@ -204,6 +209,6 @@ def main():
     '''
     #create_gps_pickles()
     df=load_tasks(cache=True)
-
+    
 if __name__ == "__main__":
     main()
