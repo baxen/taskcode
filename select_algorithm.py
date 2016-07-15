@@ -1,5 +1,6 @@
 import scipy
 import numpy as np
+import pandas as pd
 
 from sklearn.pipeline import make_pipeline
 from sklearn import svm, neighbors, ensemble, preprocessing
@@ -7,12 +8,13 @@ from sklearn.metrics import f1_score, confusion_matrix
 from sklearn.grid_search import RandomizedSearchCV
 from sklearn.cross_validation import train_test_split
 
+from IPython import embed
 
 # ----------------------------------------
 # Algorithm Selection/Optimization
 # ----------------------------------------
 
-def optimized_classifier(X, y, classifier, distributions, scorer='f1', n_iter=30, cv=3):
+def optimized_classifier(X, y, classifier, distributions, scorer='f1_weighted', n_iter=30, cv=3):
     """
     Return best classifier and scores for X,y from a randomized search over parameters
 
@@ -34,9 +36,8 @@ def optimized_classifier(X, y, classifier, distributions, scorer='f1', n_iter=30
     # It is important to handle scaling here so we don't accidentally overfit some to the
     # test data by scaling using that information as well.
     classifier = make_pipeline(preprocessing.RobustScaler(), classifier)
-
     randomized_search = RandomizedSearchCV(
-        classifier, param_distributions=distributions, n_iter=n_iter, scoring=scorer, cv=cv, n_jobs=3)
+        classifier, param_distributions=distributions, n_iter=n_iter, scoring=scorer, cv=cv, n_jobs=1)
     randomized_search.fit(X, y)
 
     print randomized_search.best_estimator_
@@ -46,8 +47,11 @@ def optimized_classifier(X, y, classifier, distributions, scorer='f1', n_iter=30
 
 
 def main():
-    X = np.asarray(df['feature_vector'])
-    y = np.asarray(df['label'])
+    df = pd.read_pickle('data/133156838395276.pkl')
+    X = df.iloc[:,4:80]
+    y = df.label.values.astype(int)
+    #X = np.random.normal(size=(1000,10))#np.asarray(df['feature_vector'])
+    #y = np.random.choice(range(10),size=1000) #np.asarray(df['label'])
 
     # Convert to numpy arrays to use with learning algorithm
     X_train, X_test, y_train, y_test = train_test_split(X,y)# convert to numpy array and train/test split it
