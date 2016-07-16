@@ -21,10 +21,10 @@ def gps_transform(func):
     These functions take a dataframe of gps data matched to a task
     and return a _list_ of _pd.Series_ which are the features for each generated row
     '''
-    def feature_func(df):
+    def feature_func(df, **kwargs):
         default_features = pd.Series(dict(label=df.task_label.max(), name=df.name.max(), start_time=df.start_time.max(), end_time=df.end_time.max())) # These are all the same so max just gets a single value
         rows = []
-        for row in func(df):
+        for row in func(df, **kwargs):
             rows.append(pd.concat((default_features, row)))
         return rows
     gps_transform.funcs[func.__name__] = feature_func
@@ -79,14 +79,13 @@ def distance(*args):
     return np.sqrt(np.sum(a*a for a in args))
 
 @gps_transform
-def chunked(df):
+def chunked(df, **kwargs):
     '''
     Extract a few statistical values from time data chunked over an interval (1m).
     Keep an hour's worth.
     '''
     # First calcluate any new values
     # Velocity is distance between consecutive points per sec
-    # df['velocity'] = distance(df.position_x.diff(), df.position_y.diff(), df.position_z.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
     df['velocity'] = distance(df.position_x.diff(), df.position_y.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
     
     # List of columns to form features
@@ -95,8 +94,9 @@ def chunked(df):
     
     # Apparently sometimes the gps data is not consecutive in seconds
     # so we need to focus on timestamps and not indices
-    interval = pd.Timedelta('60m') # Length of interval for each output row
+    interval = pd.Timedelta(kwargs.pop('interval','60m')) # Length of interval for each output row
     sub_interval = pd.Timedelta('1m') # Sub interval in which to sample derived quantities
+    n_sub = int(interval/sub_interval)
 
     rows = []
 
@@ -112,7 +112,7 @@ def chunked(df):
         moveon=False
         for col in cols:
             mean = chunk[col].groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/sub_interval).astype(int)).mean()
-            if (len(mean) < 60) or (mean.var()==0.0):
+            if (len(mean) < n_sub) or (mean.var()==0.0):
                 moveon=True
             mean = mean.reindex(range(int(interval/sub_interval)), method='nearest')
             means.append(mean)
@@ -178,7 +178,7 @@ def create_gps_pickles():
 
 
 @cached
-def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
+def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='1h', n=None):
     '''
     Return a pandas data frame that stores the features and labels for each task.
 
@@ -200,7 +200,7 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval=None, n=None):
     for i,fname in enumerate(fnames):
         sys.stdout.write('Processing file number {0} out of {1}\r'.format(i,len(fnames)))
         sys.stdout.flush()
-        reduced_gps.append(gps_transform.funcs[gps_reduce](pd.read_pickle(fname)))
+        reduced_gps.append(gps_transform.funcs[gps_reduce](pd.read_pickle(fname), interval=interval))
     rows = list(itertools.chain.from_iterable(reduced_gps))
     df = pd.DataFrame(index=range(len(rows)), columns=rows[0].index)
     for i,row in enumerate(rows):
@@ -212,7 +212,7 @@ def main():
     '''
     Make the gps pickles which are used by other methods.
     '''
-    create_gps_pickles()
+    #create_gps_pickles()
     df=load_tasks(cache=True)
     
 if __name__ == "__main__":

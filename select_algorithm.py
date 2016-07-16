@@ -9,6 +9,7 @@ from sklearn.grid_search import RandomizedSearchCV
 from sklearn.cross_validation import train_test_split
 
 from IPython import embed
+from taskcode import construct
 
 # ----------------------------------------
 # Algorithm Selection/Optimization
@@ -45,30 +46,29 @@ def optimized_classifier(X, y, classifier, distributions, scorer='f1_weighted', 
 
 
 def main():
-    df = pd.read_pickle('data/133156838395276.pkl')
-    X = df.iloc[:,4:184].astype(float)
-    X[np.isnan(X)]=0.0
-    y = df.label.values.astype(int)
-    print X.shape
-    #X = np.random.normal(size=(1000,10))#np.asarray(df['feature_vector'])
-    #y = np.random.choice(range(10),size=1000) #np.asarray(df['label'])
+    df = construct.load_tasks(cache=True, interval='60m')
+    df[df.isnull()] = 0.0
 
-    # Convert to numpy arrays to use with learning algorithm
-    X_train, X_test, y_train, y_test = train_test_split(X,y)# convert to numpy array and train/test split it
+    # Short term, use only tasks with more than 10 examples
+    labels_above_ten = df.label.groupby(df.label).count() > 10
+    df = df[df.label.isin(labels_above_ten[labels_above_ten].index)]
+    X = df.iloc[:,4:].astype(float)
+    y = df.label.values.astype(int)
+
+    X_train, X_test, y_train, y_test = train_test_split(X,y)
 
     # Now we test out a few algorithms
     # The goal is to select which algorithm will do best given reasonable
     # optimization, then we will do a more careful job in train.py
     algorithms = []
 
+    n_examples, n_features = X_train.shape
     # Throwing in a KNN first to provide a fast-to-calculate reference
     # Don't particularly expect it to be competitive.
-    # knn_params = {'n_neighbors': np.logspace(.5, 2, 10).astype(int).tolist(),
-    #               'weights': ['uniform', 'distance']}
-    # algorithms.append(optimized_classifier(X_train, y_train, neighbors.KNeighborsClassifier(), knn_params, n_iter=20))
-    # algorithms[-1][0].fit(X_train, y_train)
+    knn_params = {'n_neighbors': np.logspace(.5, 1.5, 5).astype(int).tolist(),
+                   'weights': ['uniform', 'distance']}
+    algorithms.append(optimized_classifier(X_train, y_train, neighbors.KNeighborsClassifier(), knn_params, n_iter=10))
 
-    n_examples, n_features = X_train.shape
     rfc_params = {"n_estimators": [100],
                   "criterion": ["gini", "entropy"],
                   "max_features": np.linspace(np.sqrt(n_features) / 2, np.sqrt(n_features) * 2, 5).astype(int),
