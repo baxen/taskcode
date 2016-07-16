@@ -95,7 +95,7 @@ def chunked(df):
     
     # Apparently sometimes the gps data is not consecutive in seconds
     # so we need to focus on timestamps and not indices
-    interval = pd.Timedelta('20m') # Length of interval for each output row
+    interval = pd.Timedelta('60m') # Length of interval for each output row
     sub_interval = pd.Timedelta('1m') # Sub interval in which to sample derived quantities
 
     rows = []
@@ -112,7 +112,7 @@ def chunked(df):
         moveon=False
         for col in cols:
             mean = chunk[col].groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/sub_interval).astype(int)).mean()
-            if (len(mean) < 20) or (mean.var()==0.0):
+            if (len(mean) < 60) or (mean.var()==0.0):
                 moveon=True
             mean = mean.reindex(range(int(interval/sub_interval)), method='nearest')
             means.append(mean)
@@ -147,7 +147,12 @@ def create_gps_pickles():
     # First we load the timestamps DF (just 100 for testing)
     # df = pd.read_pickle('data/TaskCodeTimestamps.pkl')[:100]
     df = pd.read_pickle('data/TaskCodeTimestamps.pkl')
-
+    df['duration'] = (df.end_time - df.start_time) / pd.Timedelta('1h')    
+    df = df[df.duration <= 8]
+    sizes = df.groupby(df.task).size()
+    common = sizes[sizes > 10].index
+    df = df[df.task.isin(common)]
+    
     # Grab gps data for each task, processing if specified
     gps = pd.read_pickle('data/LocationData.pkl')
     with open('data/NameToNode.pkl','r') as infile:
@@ -207,7 +212,7 @@ def main():
     '''
     Make the gps pickles which are used by other methods.
     '''
-    #create_gps_pickles()
+    create_gps_pickles()
     df=load_tasks(cache=True)
     
 if __name__ == "__main__":

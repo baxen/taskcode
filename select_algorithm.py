@@ -48,8 +48,8 @@ def optimized_classifier(X, y, classifier, distributions, scorer='f1_weighted', 
 
 def main():
     df = pd.read_pickle('data/133156838395276.pkl')
-    X = df.iloc[:,4:60].astype(float)
-    #X[np.isnan(X)]=0.0
+    X = df.iloc[:,4:184].astype(float)
+    X[np.isnan(X)]=0.0
     y = df.label.values.astype(int)
     print X.shape
     #X = np.random.normal(size=(1000,10))#np.asarray(df['feature_vector'])
@@ -65,10 +65,10 @@ def main():
 
     # Throwing in a KNN first to provide a fast-to-calculate reference
     # Don't particularly expect it to be competitive.
-    knn_params = {'n_neighbors': np.logspace(.5, 2, 10).astype(int).tolist(),
-                  'weights': ['uniform', 'distance']}
-    algorithms.append(optimized_classifier(X_train, y_train, neighbors.KNeighborsClassifier(), knn_params, n_iter=20))
-    algorithms[-1][0].fit(X_train, y_train)
+    # knn_params = {'n_neighbors': np.logspace(.5, 2, 10).astype(int).tolist(),
+    #               'weights': ['uniform', 'distance']}
+    # algorithms.append(optimized_classifier(X_train, y_train, neighbors.KNeighborsClassifier(), knn_params, n_iter=20))
+    # algorithms[-1][0].fit(X_train, y_train)
 
     n_examples, n_features = X_train.shape
     rfc_params = {"n_estimators": [100],
@@ -87,9 +87,9 @@ def main():
 
     # Decided to use LinearSVC here because it is the only one that runs quickly enough to
     # test on my laptop. Given access to more resource it would be reasonable to try a poly or rbf kernel.
-    svc_params = {'C': scipy.stats.expon(scale=100),
-                  'class_weight': ['balanced', None]}
-    algorithms.append(optimized_classifier(X_train, y_train, svm.LinearSVC(), svc_params))
+    # svc_params = {'C': scipy.stats.expon(scale=100),
+    #               'class_weight': ['balanced', None]}
+    # algorithms.append(optimized_classifier(X_train, y_train, svm.LinearSVC(), svc_params))
 
     # Train the best of them on the full training set and test on the test set
     print "------------------------------------------------------------"
