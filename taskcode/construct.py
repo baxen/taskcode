@@ -134,6 +134,67 @@ def chunked(df, **kwargs):
 
 
 @gps_transform
+def derived(df, **kwargs):
+    '''
+    Extract many statistical values from time data
+    '''
+    
+    # Require a minimum number of gps points
+    print len(df)
+    if len(df) < 10:
+        return []
+
+    # Distance from center
+    df['distance'] = distance(df.position_x - df.position_x.mean(), df.position_y - df.position_y.mean())
+    df['distance_x'] = distance(df.position_x - df.position_x.mean())
+    df['distance_y'] = distance(df.position_y - df.position_y.mean())
+    
+    # First derivative in various styles
+    df['velocity'] = distance(df.position_x.diff(), df.position_y.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['velocity_x_rms'] = distance(df.position_x.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['velocity_y_rms'] = distance(df.position_y.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['velocity_x'] = df.position_x.diff()/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['velocity_y'] = df.position_y.diff()/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+
+    # Second derivative in various styles
+    df['acceleration'] = distance(df.velocity_x.diff(), df.velocity_y.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['acceleration_x_rms'] = distance(df.velocity_x.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['acceleration_y_rms'] = distance(df.velocity_y.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['acceleration_x'] = df.velocity_x.diff()/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['acceleration_y'] = df.velocity_y.diff()/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+
+    # More ideas?
+    # We could potentially find rooms and get centers or edges or similar
+
+    cols = ['position_x', 'position_y', 'distance', 'distance_x', 'distance_y',
+            'velocity', 'velocity_x_rms', 'velocity_y_rms', 'velocity_x', 'velocity_y', 
+            'acceleration', 'acceleration_x_rms', 'acceleration_y_rms', 'acceleration_x', 'acceleration_y']
+
+    interval = pd.Timedelta(kwargs.pop('interval','10m')) # Length of interval for each output row
+
+    rows = []
+
+    # Create a chunk containing all timestamps within one interval
+    lower = df.position_update_timestamp.min() 
+    upper = lower + interval
+    chunk = df[(df.position_update_timestamp > lower) & (df.position_update_timestamp < upper)].copy()
+
+    while len(chunk):
+        # Calculate values in the sub intervals for this chunk.
+        means = pd.Series(chunk[col].mean() for col in cols)
+        stds = pd.Series(chunk[col].std() for col in cols)
+        features = pd.concat((means,stds))
+        features.index = range(len(features))
+        rows.append(features)
+
+        # Get the next chunk
+        lower,upper = lower+interval, upper+interval
+        chunk = df[(df.position_update_timestamp > lower) & (df.position_update_timestamp < upper)].copy()
+        
+    return rows
+
+
+@gps_transform
 def consecutives():
     '''
     Map gps to a list of consecutive stationary points (x,y,z,t,v)
