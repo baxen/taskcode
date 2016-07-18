@@ -88,15 +88,16 @@ def chunked(df, **kwargs):
     # First calcluate any new values
     # Velocity is distance between consecutive points per sec
     df['velocity'] = distance(df.position_x.diff(), df.position_y.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
-    
+    df['velocity_x'] = distance(df.position_x.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['velocity_y'] = distance(df.position_y.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['acceleration'] = distance(df.velocity_x.diff(), df.velocity_y.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
     # List of columns to form features
     # cols = ['position_x','position_y','position_z','velocity']
-    cols = ['position_x','position_y','velocity']
-    
+    cols = ['position_x', 'position_y','velocity', 'acceleration']
     # Apparently sometimes the gps data is not consecutive in seconds
     # so we need to focus on timestamps and not indices
-    interval = pd.Timedelta(kwargs.pop('interval','60m')) # Length of interval for each output row
-    sub_interval = pd.Timedelta(kwargs.pop('subinterval','1m')) # Sub interval in which to sample derived quantities
+    interval = pd.Timedelta(kwargs.pop('interval','10m')) # Length of interval for each output row
+    sub_interval = pd.Timedelta(kwargs.pop('subinterval','2m')) # Sub interval in which to sample derived quantities
     dens = float(kwargs.pop('dens','1.0'))
     n_sub = int(interval/(dens*sub_interval))
 
