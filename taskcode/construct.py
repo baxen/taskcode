@@ -226,7 +226,7 @@ def create_gps_pickles():
     gps['name'] = gps.node_id.map(nodes)
 
     # Build an extension to the df by creating feature vectors from (transformed) x,y,z data
-    for index, name, start, end, task in itertools.izip(df.index, df.name, df.start_time, df.end_time, df.task):
+    for index, name, start, end, task, room in itertools.izip(df.index, df.name, df.start_time, df.end_time, df.task, df.room):
         sys.stdout.write('Processing task number {0} out of {1}\r'.format(index,df.index[-1]))
         sys.stdout.flush()
         sub_gps = gps[(gps.name == name) & (gps.position_update_timestamp > start) & (gps.position_update_timestamp < end)].copy()
@@ -236,6 +236,8 @@ def create_gps_pickles():
         sub_gps['end_time'] = end
         sub_gps['task_id'] = index
         sub_gps['task_label'] = task
+        sub_gps['room'] = room
+        sub_gps['skill'] = name.split(" ")[0]
         sub_gps.to_pickle('data/gps_{:06d}.pkl'.format(index))
     print
 
@@ -275,8 +277,8 @@ def main():
     '''
     Make the gps pickles which are used by other methods.
     '''
-    #create_gps_pickles()
-    df=load_tasks(cache=True)
+    create_gps_pickles()
+    #df=load_tasks(cache=True)
     
 if __name__ == "__main__":
     main()
