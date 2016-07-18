@@ -46,12 +46,15 @@ def optimized_classifier(X, y, classifier, distributions, scorer='f1_weighted', 
 
 
 def main():
-    df = construct.load_tasks(cache=True, interval='60m', dens='2.0')
+    df = construct.load_tasks(cache=True, interval='30m', dens='1.0')
     df[df.isnull()] = 0.0
 
     # Short term, use only tasks with more than 10 examples
-    labels_above_ten = df.label.groupby(df.label).count() > 10
-    df = df[df.label.isin(labels_above_ten[labels_above_ten].index)]
+    min_count = 50
+    counts = df.label.groupby(df.label).count()
+    print counts
+    labels_above_min = counts > min_count
+    df = df[df.label.isin(labels_above_min[labels_above_min].index)]
     X = df.iloc[:,4:].astype(float)
     y = df.label.values.astype(int)
     print X.shape
