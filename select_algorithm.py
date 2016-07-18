@@ -46,11 +46,11 @@ def optimized_classifier(X, y, classifier, distributions, scorer='f1_weighted', 
 
 
 def main():
-    df = construct.load_tasks(cache=True, interval='30m', dens='1.0')
+    df = construct.load_tasks(cache=True, interval='30m', subinterval='1m',dens='1.0')
     df[df.isnull()] = 0.0
 
     # Short term, use only tasks with more than 10 examples
-    min_count = 50
+    min_count = 30
     counts = df.label.groupby(df.label).count()
     print counts
     labels_above_min = counts > min_count

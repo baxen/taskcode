@@ -96,7 +96,7 @@ def chunked(df, **kwargs):
     # Apparently sometimes the gps data is not consecutive in seconds
     # so we need to focus on timestamps and not indices
     interval = pd.Timedelta(kwargs.pop('interval','60m')) # Length of interval for each output row
-    sub_interval = pd.Timedelta('1m') # Sub interval in which to sample derived quantities
+    sub_interval = pd.Timedelta(kwargs.pop('subinterval','1m')) # Sub interval in which to sample derived quantities
     dens = float(kwargs.pop('dens','1.0'))
     n_sub = int(interval/(dens*sub_interval))
 
@@ -179,7 +179,7 @@ def create_gps_pickles():
 
 
 @cached
-def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='1h', dens='1.0', n=None):
+def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='60m', subinterval='1m', dens='1.0', n=None):
     '''
     Return a pandas data frame that stores the features and labels for each task.
 
@@ -201,7 +201,7 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='1h', dens='1.0
     for i,fname in enumerate(fnames):
         sys.stdout.write('Processing file number {0} out of {1}\r'.format(i,len(fnames)))
         sys.stdout.flush()
-        reduced_gps.append(gps_transform.funcs[gps_reduce](pd.read_pickle(fname), interval=interval, dens=dens))
+        reduced_gps.append(gps_transform.funcs[gps_reduce](pd.read_pickle(fname), interval=interval, subinterval=subinterval, dens=dens))
     rows = list(itertools.chain.from_iterable(reduced_gps))
     df = pd.DataFrame(index=range(len(rows)), columns=rows[0].index)
     for i,row in enumerate(rows):
