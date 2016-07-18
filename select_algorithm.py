@@ -46,7 +46,7 @@ def optimized_classifier(X, y, classifier, distributions, scorer='f1_weighted', 
 
 
 def main():
-    df = construct.load_tasks(cache=True, interval='60m')
+    df = construct.load_tasks(cache=True, interval='60m', dens='2.0')
     df[df.isnull()] = 0.0
 
     # Short term, use only tasks with more than 10 examples
@@ -54,7 +54,7 @@ def main():
     df = df[df.label.isin(labels_above_ten[labels_above_ten].index)]
     X = df.iloc[:,4:].astype(float)
     y = df.label.values.astype(int)
-
+    print X.shape
     X_train, X_test, y_train, y_test = train_test_split(X,y)
 
     # Now we test out a few algorithms
