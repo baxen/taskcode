@@ -23,7 +23,7 @@ def gps_transform(func):
     '''
     def feature_func(df, **kwargs):
         # These are all the same so max just gets a single value
-        default_features = pd.Series(dict(label=df.task_label.max(), name=df.name.max(), start_time=df.start_time.max(), end_time=df.end_time.max())) 
+        default_features = pd.Series(dict(label=df.task_label.max(), name=df.name.max(), start_time=df.start_time.max(), end_time=df.end_time.max(), skill=df.skill.max(), room=df.room.max()))
         rows = []
         for row in func(df, **kwargs):
             rows.append(pd.concat((default_features, row)))
@@ -243,7 +243,7 @@ def create_gps_pickles():
 
 
 @cached
-def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='60m', subinterval='1m', dens='1.0', n=None):
+def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='60m', subinterval='1m', dens='1.0', n=None, categories=True):
     '''
     Return a pandas data frame that stores the features and labels for each task.
 
@@ -270,6 +270,12 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='60m', subinter
     df = pd.DataFrame(index=range(len(rows)), columns=rows[0].index)
     for i,row in enumerate(rows):
         df.iloc[i] = row
+    
+    # Some final processing! We want to add features to encode the categorical variables as dummies.
+    if categories:
+        df = pd.concat((df, pd.get_dummies(df.skill)), axis=1)
+        df = pd.concat((df, pd.get_dummies(df.room).rename(columns=lambda x: 'room_'+str(x)), axis=1)
+
     return df
     
     
