@@ -47,20 +47,8 @@ def optimized_classifier(X, y, classifier, distributions, scorer='f1_weighted', 
 
 def main():
     df = construct.load_tasks(cache=True, interval='30m', categories=True)
-    df = df.drop(['end_time','name','skill','start_time','room'],axis=1).astype(float)
-    df_sr = df.iloc[:,253:]
-    df_no_se = df.iloc[:,0:133]
-    df=df_no_se
-    df=pd.concat((df_no_se,df_sr),axis=1)
-    df[df.isnull()] = 0.0
-    # Short term, use only tasks with more than min_count examples
-    min_count = 30
-    counts = df.label.groupby(df.label).count()
-    print counts
-    labels_above_min = counts > min_count
-    df = df[df.label.isin(labels_above_min[labels_above_min].index)]
-    X = df.iloc[:,1:].astype(float)
-    y = df.label.values.astype(int)
+    X, y = construct.to_array(df)
+
     print X.shape
     X_train, X_test, y_train, y_test = train_test_split(X,y)
 
