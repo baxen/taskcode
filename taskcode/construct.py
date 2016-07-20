@@ -23,7 +23,15 @@ def gps_transform(func):
     '''
     def feature_func(df, **kwargs):
         # These are all the same so max just gets a single value
-        default_features = pd.Series(dict(label=df.task_label.max(), name=df.name.max(), start_time=df.start_time.max(), end_time=df.end_time.max(), skill=df.skill.max(), room=df.room.max()))
+        default_features = pd.Series(dict(label=df.task_label.max(), name=df.name.max(),
+                                          start_time=df.start_time.max(), end_time=df.end_time.max(),
+                                          skill=df.skill.max(), room=df.room.max(), last_task=df.last_task.max(),
+                                          ntask_1_completed=df.ntask_1_completed.max(),ntask_2_completed=df.ntask_2_completed.max(),
+                                          ntask_3_completed=df.ntask_3_completed.max(),ntask_4_completed=df.ntask_4_completed.max(),
+                                          ntask_5_completed=df.ntask_5_completed.max(),ntask_6_completed=df.ntask_6_completed.max(),
+                                          ntask_7_completed=df.ntask_7_completed.max(),ntask_8_completed=df.ntask_8_completed.max(),
+                                          ntask_9_completed=df.ntask_9_completed.max(),ntask_10_completed=df.ntask_10_completed.max(),
+                                          ntask_11_completed=df.ntask_11_completed.max()))
         rows = []
         for row in func(df, **kwargs):
             rows.append(pd.concat((default_features, row)))
@@ -130,6 +138,7 @@ def chunked(df, **kwargs):
         lower,upper = lower+interval, upper+interval
         chunk = df[(df.position_update_timestamp > lower) & (df.position_update_timestamp < upper)].copy()
         if not moveon: rows.append(features)
+    #if len(rows): embed()
     return rows
 
 
@@ -232,12 +241,24 @@ def create_gps_pickles():
         sub_gps = gps[(gps.name == name) & (gps.position_update_timestamp > start) & (gps.position_update_timestamp < end)].copy()
         if not len(sub_gps):
             continue
+        # Get completed tasks information
+        fin_bool = (df.loc[df.room==room].end_time < start)
+        finished = df.loc[df.room==room].loc[fin_bool]
+        finished_task_counts = finished.groupby('task').size()
+        finished_task_counts = finished_task_counts.reindex(range(1,12),fill_value=0)
+        try:
+            last_task = finished.sort_values('end_time').iloc[-1].task
+        except:
+            last_task = 0
         sub_gps['start_time'] = start
         sub_gps['end_time'] = end
         sub_gps['task_id'] = index
         sub_gps['task_label'] = task
         sub_gps['room'] = room
         sub_gps['skill'] = name.split(" ")[0]
+        sub_gps['last_task'] = last_task
+        for i in finished_task_counts.index:
+            sub_gps['ntask_'+str(i)+'_completed'] = finished_task_counts[i]
         sub_gps.to_pickle('data/gps_{:06d}.pkl'.format(index))
     print
 
@@ -270,11 +291,11 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='60m', subinter
     df = pd.DataFrame(index=range(len(rows)), columns=rows[0].index)
     for i,row in enumerate(rows):
         df.iloc[i] = row
-    
+    embed()
     # Some final processing! We want to add features to encode the categorical variables as dummies.
     if categories:
         df = pd.concat((df, pd.get_dummies(df.skill)), axis=1)
-        df = pd.concat((df, pd.get_dummies(df.room).rename(columns=lambda x: 'room_'+str(x)), axis=1)
+        df = pd.concat((df, pd.get_dummies(df.room).rename(columns=lambda x: 'room_'+str(x))), axis=1)
 
     return df
     
@@ -283,8 +304,8 @@ def main():
     '''
     Make the gps pickles which are used by other methods.
     '''
-    create_gps_pickles()
-    #df=load_tasks(cache=True)
-    
+    #create_gps_pickles()
+    df=load_tasks(cache=False)
+                       
 if __name__ == "__main__":
     main()
