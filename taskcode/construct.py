@@ -291,7 +291,6 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='60m', subinter
     df = pd.DataFrame(index=range(len(rows)), columns=rows[0].index)
     for i,row in enumerate(rows):
         df.iloc[i] = row
-    embed()
     # Some final processing! We want to add features to encode the categorical variables as dummies.
     if categories:
         df = pd.concat((df, pd.get_dummies(df.skill)), axis=1)
