@@ -36,7 +36,8 @@ def train(optimize=False, cv=10):
 
     # Now use cross validation to measure f1/accuracy with a confidence interval
     scores = cross_val_score(classifier, X, y, scoring='f1_weighted', cv=cv)
-    print "F1 Weighted: {:.2f} +/- {:.2f}".format(scores.mean(), scores.std())
+    print scores
+    print "F1 Weighted: {:.2f} +/- {:.2f}".format(scores.mean(), scores.std()/np.sqrt(cv))
     
 
 
