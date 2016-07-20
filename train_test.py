@@ -9,7 +9,7 @@ from select_algorithm import optimized_classifier
 
 from taskcode import construct
 
-def train(optimize=False):
+def train(optimize=False, cv=10):
     df = construct.load_tasks(cache=True, interval='30m', categories=True)
     X, y = construct.to_array(df)
 
@@ -35,7 +35,7 @@ def train(optimize=False):
         classifier = make_pipeline(preprocessing.RobustScaler(), gbc)
 
     # Now use cross validation to measure f1/accuracy with a confidence interval
-    scores = cross_val_score(classifier, X, y, scoring='f1_weighted', cv=10)
+    scores = cross_val_score(classifier, X, y, scoring='f1_weighted', cv=cv)
     print "F1 Weighted: {:.2f} +/- {:.2f}".format(scores.mean(), scores.std())
     
 
@@ -44,9 +44,11 @@ def main():
     parser = argparse.ArgumentParser('Train GBC on dataset and test.')
     parser.add_argument('--optimize', action='store_true',
                         help='Run cross-validation to choose optimal paremeters. Otherwise use saved parameters.')
+    parser.add_argument('--kfold', type=int, default=10,
+                        help='Number of fold to use for cv measurement.')
     args = parser.parse_args()
 
-    train(args.optimize)
+    train(args.optimize, args.kfold)
 
 
 if __name__ == "__main__":
