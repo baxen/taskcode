@@ -37,7 +37,7 @@ def train(optimize=False, cv=10):
 
     # Now use cross validation to measure f1/accuracy with a confidence interval
     
-    scores = cross_val_score(classifier, X, y, cv=StratifiedShuffleSplit(y,n_iter=cv,test_size=0.5))
+    scores = cross_val_score(classifier, X, y, scoring='f1_weighted', cv=StratifiedShuffleSplit(y,n_iter=cv,test_size=0.5))
     # skf = StratifiedKFold(y=y,n_folds=cv,shuffle=False)
     # for train_i, test_i in skf:
     #     y_train, y_test = y[train_i], y[test_i]
