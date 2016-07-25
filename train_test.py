@@ -1,14 +1,15 @@
 import argparse
 import numpy as np
 
-from sklearn.cross_validation import cross_val_score
+from sklearn.cross_validation import cross_val_score,StratifiedShuffleSplit
 from sklearn.pipeline import make_pipeline
 from sklearn import ensemble, preprocessing
 from sklearn.metrics import f1_score, confusion_matrix
 from select_algorithm import optimized_classifier
+from IPython import embed
 
 from taskcode import construct
-
+    
 def train(optimize=False, cv=10):
     df = construct.load_tasks(cache=True, interval='30m', categories=True)
     X, y = construct.to_array(df)
@@ -35,9 +36,17 @@ def train(optimize=False, cv=10):
         classifier = make_pipeline(preprocessing.RobustScaler(), gbc)
 
     # Now use cross validation to measure f1/accuracy with a confidence interval
-    scores = cross_val_score(classifier, X, y, scoring='f1_weighted', cv=cv)
+    
+    scores = cross_val_score(classifier, X, y, scoring='f1_weighted', cv=StratifiedShuffleSplit(y,n_iter=cv,test_size=0.5))
+    # skf = StratifiedKFold(y=y,n_folds=cv,shuffle=False)
+    # for train_i, test_i in skf:
+    #     y_train, y_test = y[train_i], y[test_i]
+    #     print len(y_train), len(y_test)
+    #     #train_counts = y_train.label.groupby(y_train.label).count()
+    #     #test_counts = y_test.label.groupby(y_test.label).count()
+    #     #print train_counts, test_counts
     print scores
-    print "F1 Weighted: {:.2f} +/- {:.2f}".format(scores.mean(), scores.std()/np.sqrt(cv))
+    print "F1 Weighted: {:.3f} +/- {:.3f}".format(scores.mean(), scores.std()/np.sqrt(cv))
     
 
 
