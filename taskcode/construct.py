@@ -390,6 +390,7 @@ def to_array(df):
     print counts
     labels_above_min = counts > min_count
     df = df[df.label.isin(labels_above_min[labels_above_min].index)]
+
     y = df.label.values.astype(int)
     df = df.drop(['label','end_time','name','skill','start_time','room'],axis=1).astype(float)
     df[df.isnull()] = 0.0

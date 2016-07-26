@@ -46,7 +46,7 @@ def optimized_classifier(X, y, classifier, distributions, scorer='f1_weighted', 
 
 
 def main():
-    df = construct.load_tasks(cache=True, interval='30m', categories=True)
+    df = construct.load_tasks(cache=True, interval='30m', categories=True, gps_reduce='derived')
     X, y = construct.to_array(df)
 
     print X.shape
