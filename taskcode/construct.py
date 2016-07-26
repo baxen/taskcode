@@ -230,6 +230,7 @@ def derived(df, **kwargs):
     interval = pd.Timedelta(kwargs.pop('interval','10m')) # Length of interval for each output row
     sub_interval = pd.Timedelta(kwargs.pop('subinterval','2m')) # Sub interval in which to sample derived quantities
     dens = float(kwargs.pop('dens','1.0'))
+    q = float(kwargs.pop('q','0.1'))
     n_sub = dens*int(interval/sub_interval)
 
     rows = []
@@ -267,8 +268,11 @@ def derived(df, **kwargs):
         trend_velocities.append(trend_velocities[1]/means[7] if means[7] >= 0 else 1.0)
         trend_velocities.append(trend_velocities[2]/means[5] if means[5] >= 0 else 1.0)
         trend_velocities = pd.Series(trend_velocities)
+
+        # Missingness distribution
+        md = missingness(chunk,q)
         
-        features = pd.concat((fft_max, fft_period, trend_velocities, means, stds))
+        features = pd.concat((fft_max, fft_period, trend_velocities, means, stds, md))
         features.index = range(len(features))
         if not moveon: rows.append(features)
 
@@ -344,7 +348,7 @@ def create_gps_pickles():
 
 
 @cached
-def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='60m', subinterval='1m', dens='1.0', n=None, categories=True):
+def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='60m', subinterval='1m', dens='1.0', n=None, categories=True,q=0.1):
     '''
     Return a pandas data frame that stores the features and labels for each task.
 
@@ -366,7 +370,7 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='60m', subinter
     for i,fname in enumerate(fnames):
         sys.stdout.write('Processing file number {0} out of {1}\r'.format(i,len(fnames)))
         sys.stdout.flush()
-        reduced_gps.append(gps_transform.funcs[gps_reduce](pd.read_pickle(fname), interval=interval, subinterval=subinterval, dens=dens))
+        reduced_gps.append(gps_transform.funcs[gps_reduce](pd.read_pickle(fname), interval=interval, subinterval=subinterval, dens=dens, q=q))
     rows = list(itertools.chain.from_iterable(reduced_gps))
     df = pd.DataFrame(index=range(len(rows)), columns=rows[0].index)
     for i,row in enumerate(rows):
@@ -380,23 +384,21 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='60m', subinter
 
 
 def to_array(df):
-    y = df.label.values.astype(int)
-    df = df.drop(['label','end_time','name','skill','start_time','room'],axis=1).astype(float)
-    df[df.isnull()] = 0.0
-
     # Short term, use only tasks with more than min_count examples
     min_count = 30
     counts = df.label.groupby(df.label).count()
     print counts
     labels_above_min = counts > min_count
     df = df[df.label.isin(labels_above_min[labels_above_min].index)]
-    #df = df[df.label.isin([2,3,4])]
+    y = df.label.values.astype(int)
+    df = df.drop(['label','end_time','name','skill','start_time','room'],axis=1).astype(float)
+    df[df.isnull()] = 0.0
     X = df.astype(float)
     return X, y
 
 def missingness(df,q=0.1):
     timeD = pd.Series(df['position_update_timestamp'].iloc[1:len(df)].values - df['position_update_timestamp'].iloc[0:(len(df)-1)].values)
-    return timeD.quantile(np.arange(0.0,1.0+q,q))
+    return timeD.quantile(np.arange(0.0,1.0+q,q))/pd.Timedelta('1s')
     
 def main():
     '''
