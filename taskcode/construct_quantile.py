@@ -33,11 +33,9 @@ def gps_transform(func):
                                           ntask_7_completed=df.ntask_7_completed.max(),ntask_8_completed=df.ntask_8_completed.max(),
                                           ntask_9_completed=df.ntask_9_completed.max(),ntask_10_completed=df.ntask_10_completed.max(),
                                           ntask_11_completed=df.ntask_11_completed.max())
-        dimension = 12
+        dimension = 10
         dict1 = quantiles.quantile_dwell(df, dimension)
         default_features.update(dict1)
-        dict2 = quantiles.quant_switcher(df, dimension)
-        default_features.update(dict2)
         default_features = pd.Series(default_features)
         rows = []
         for row in func(df, **kwargs):
@@ -242,7 +240,7 @@ def create_gps_pickles():
     df['name'] = df.first_name + ' ' + df.last_name
     gps['name'] = gps.node_id.map(nodes)
 
-    my_dimensions = [8,9,11,12]
+    my_dimensions = [10]
     #create pickles with different dimensions
     for dimen in my_dimensions:
         boundaries = quantiles.quantile_definer(dimen, gps)
@@ -273,13 +271,12 @@ def create_gps_pickles():
             for i in finished_task_counts.index:
                 sub_gps['ntask_'+str(i)+'_completed'] = finished_task_counts[i]
             sub_gps = quantiles.quantiler(sub_gps, boundaries)
-            my_dir = 'data' + str(dimen)
-            sub_gps.to_pickle('data' + str(dimen) + '/gps_{:06d}.pkl'.format(index))
+            sub_gps.to_pickle('data/gps_{:06d}.pkl'.format(index))
         print
 
 
 @cached
-def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='30m', subinterval='1m', dens='1.0', n=None, categories=True):
+def load_tasks(gps_reduce='derived', accel_reduce=None, interval='30m', subinterval='1m', dens='1.0', n=None, categories=True):
     '''
     Return a pandas data frame that stores the features and labels for each task.
 
@@ -291,7 +288,7 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='30m', subinter
     '''
 
     # First determine the indices from the pickle files
-    fnames = glob.glob('data12/gps_*.pkl')
+    fnames = glob.glob('data/gps_*.pkl')
     if n is not None:
         fnames = fnames[:n]
 
@@ -310,7 +307,7 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='30m', subinter
     if categories:
         df = pd.concat((df, pd.get_dummies(df.skill)), axis=1)
         df = pd.concat((df, pd.get_dummies(df.room).rename(columns=lambda x: 'room_'+str(x))), axis=1)
-    return df.fillna(0)
+    return df
 
 
 def to_array(df):

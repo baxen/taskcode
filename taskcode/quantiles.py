@@ -76,9 +76,8 @@ def quantiler(df, quant_bounds):
 
 def quantile_dwell(df, dimension):
     '''
-    This function determines the dwell time in each quantile for each task
-    Based on dimension
-    Also determines the fraction of time spent in each quantile
+    This function determines the fraction of time in each quantile for each task
+    as well as the total number of quantile edge crossings
     '''
     df = df.sort_values(by = 'quantile', ascending = True)
     quant_rep = df['quantile'].unique().tolist()
@@ -95,49 +94,8 @@ def quantile_dwell(df, dimension):
             quant_dict['Quant_' + str(key) + '_Frac'] = temp_dict[key]/total_time
         else:
             quant_dict['Quant_' + str(key) + '_Frac'] = 0
-    #Return the updated dictionary
-    return quant_dict
-
-def quant_switcher(df, dimension):
-    '''
-    This function determines the counts for quantile switching referenced to boundary
-    '''
-    keys = []
-    '''
-    We will assume that any two quantiles can be directly connected between consecutive timepoints.
-    This is not true if the GPS data are very dense (e.g., in some cases you would have to cross
-    multiple quantile edges to move from quantile M to quantile N), but in cases where there
-    are significant gaps between consecutive timepoints, you could envision "teleporting"
-    between non-adjacent quantiles without any information about the true continuous path that was taken.
-    We will also for now ignore directionality of crossing (e.g. 1->2 and 2->1 are equivalent), since
-    the number of forward crossings should be linearly dependent on the number of reverse crossings.
-    This may not be the case if you have a lot of teleportation, but I imagine that
-    those types of events will be rare relative to continuous crossings.
-    '''
-    for i in range(pow(dimension, 2)):
-        for j in range(i + 1, pow(dimension, 2)):
-            keys.append(str(i) + '_' + str(j) + '_cross')
-    #Initialize the switcher dictionary, first with zero counts for each crossing
-    switcher_dict = {}
-    for key in keys:
-        switcher_dict[key] = 0
-    #Remove entries that do not have quantile crossings
+    #Determine the total number of quantile crossings
     df2 = df[df['quantile_diff'] != 0]
-    df2.index = range(len(df2))
-    #Define a helper function to convert quantile and new_quantile into a dictionary key
-    def key_maker(x, y):
-        if int(x) < int(y):
-            return str(x) + '_' + str(y) + '_cross'
-        else:
-            return str(y) + '_' + str(x) + '_cross'
-    if len(df2) == 0:
-        switcher_dict['total_crossings'] = 0
-        return switcher_dict
-    else:
-        df2['cross_keys'] = df2.apply(lambda row: key_maker(row['quantile'], row['new_quantile']), axis = 1)
-        cross_keys = df2['cross_keys'].tolist()
-        for key in cross_keys:
-            switcher_dict[key] += 1
-        #also compute the total number of crossings
-        switcher_dict['total_crossings'] = len(df2)
-        return switcher_dict
+    quant_dict['total_crossings'] = len(df2)
+    #Return the updated dictionary with fractions and total number of crossings
+    return quant_dict
