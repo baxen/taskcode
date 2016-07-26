@@ -230,7 +230,7 @@ def derived(df, **kwargs):
     interval = pd.Timedelta(kwargs.pop('interval','10m')) # Length of interval for each output row
     sub_interval = pd.Timedelta(kwargs.pop('subinterval','2m')) # Sub interval in which to sample derived quantities
     dens = float(kwargs.pop('dens','1.0'))
-    n_sub = int(interval/(dens*sub_interval))
+    n_sub = dens*int(interval/sub_interval)
 
     rows = []
 
