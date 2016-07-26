@@ -1,7 +1,7 @@
 import argparse
 import numpy as np
 
-from sklearn.cross_validation import cross_val_score
+from sklearn.cross_validation import cross_val_score, train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn import ensemble, preprocessing
 from sklearn.metrics import f1_score, confusion_matrix
@@ -10,6 +10,7 @@ from select_algorithm import optimized_classifier
 from taskcode import construct
 
 def train(optimize=False, cv=10):
+    #df = construct.load_tasks(cache=True, interval='30m', categories=True, gps_reduce='derived')
     df = construct.load_tasks(cache=True, interval='30m', categories=True)
     X, y = construct.to_array(df)
 

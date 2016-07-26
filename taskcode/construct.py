@@ -11,6 +11,7 @@ import itertools
 import sys
 import pandas as pd
 import numpy as np
+import scipy.signal as signal
 
 from IPython import embed
 
@@ -142,6 +143,47 @@ def chunked(df, **kwargs):
     return rows
 
 
+
+def periodicity(df, col):
+    x = df[col]
+    t = (df.position_update_timestamp - df.position_update_timestamp.min())/pd.Timedelta('1s')
+    
+    # We sample at 1 hz best, so we can't measure any components above 0.5 hz
+    # We can in principle see very low frequency all the way down to dc
+    # but we can't tell the difference between dc and an 8h frequency
+    
+    # If we chunk down to 30m or 1h, 1e-4 is a better lower bound
+    f = np.logspace(-4, np.log10(0.5), 10000)# in hertz
+    try:
+        return f, signal.lombscargle(t.values, x.values.astype(float), f)
+    except ZeroDivisionError:
+        return [], []
+        
+
+
+def peak_frequencies(f, p, n=5):
+    if len(f) == 0:
+        return np.zeros(n), np.zeros(n)
+    p/=p.max()
+    arm = signal.argrelmax(p)
+    fm, pm = f[arm], p[arm]
+    sort = np.argsort(pm)[::-1]
+    maxes, periods = pm[sort], 1.0/fm[sort]
+    # Get rid of any above 95% of max, that is almost definitely part of the DC with 
+    # some noise or float errors causing it to show up as a relative maximum
+    maxes, periods = maxes[maxes < 0.95], periods[maxes < 0.95]
+
+    # If we don't have any peaks at all, just give zeros
+    if len(maxes) == 0:
+        maxes = np.zeros(n)
+        periods = np.zeros(n)
+    # In case we have less than n, repeate the last one
+    else:
+        maxes = maxes[:n] if len(maxes) >= n else np.append(maxes, maxes[-1]*np.ones(n-len(maxes)))
+        periods = periods[:n] if len(periods) >= n else np.append(periods, periods[-1]*np.ones(n-len(periods)))
+    return maxes, periods
+
+
 @gps_transform
 def derived(df, **kwargs):
     '''
@@ -153,6 +195,7 @@ def derived(df, **kwargs):
     if len(df) < 10:
         return []
 
+    # Variables defined at each time point
     # Distance from center
     df['distance'] = distance(df.position_x - df.position_x.mean(), df.position_y - df.position_y.mean())
     df['distance_x'] = distance(df.position_x - df.position_x.mean())
@@ -170,7 +213,7 @@ def derived(df, **kwargs):
     df['acceleration_x_rms'] = distance(df.velocity_x.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
     df['acceleration_y_rms'] = distance(df.velocity_y.diff())/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
     df['acceleration_x'] = df.velocity_x.diff()/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
-    df['acceleration_y'] = df.velocity_y.diff()/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))
+    df['acceleration_y'] = df.velocity_y.diff()/(df.position_update_timestamp.diff()/pd.Timedelta('1s'))    
 
     # More ideas?
     # We could potentially find rooms and get centers or edges or similar
@@ -190,9 +233,20 @@ def derived(df, **kwargs):
 
     while len(chunk):
         # Calculate values in the sub intervals for this chunk.
+
+        # Stat variables from some columns
         means = pd.Series(chunk[col].mean() for col in cols)
         stds = pd.Series(chunk[col].std() for col in cols)
-        features = pd.concat((means,stds))
+
+        # FT variables
+        fft_max, fft_period = [], []
+        for col in ['position_x', 'position_y']:
+            maxes, periods = peak_frequencies(*periodicity(chunk, col))
+            fft_max.extend(maxes)
+            fft_period.extend(periods)
+        fft_max, fft_period = pd.Series(fft_max), pd.Series(fft_period)
+        
+        features = pd.concat((fft_max, fft_period, means, stds))
         features.index = range(len(features))
         rows.append(features)
 
@@ -303,7 +357,7 @@ def to_array(df):
     df = df.drop(['end_time','name','skill','start_time','room'],axis=1).astype(float)
     df_sr = df.iloc[:,253:]
     df_no_se = df.iloc[:,0:133]
-    df=df_no_se
+    #df=df_no_se
     df=pd.concat((df_no_se,df_sr),axis=1)
     df[df.isnull()] = 0.0
     # Short term, use only tasks with more than min_count examples
@@ -312,6 +366,7 @@ def to_array(df):
     print counts
     labels_above_min = counts > min_count
     df = df[df.label.isin(labels_above_min[labels_above_min].index)]
+    #df = df[df.label.isin([2,3,4])]
     X = df.iloc[:,1:].astype(float)
     y = df.label.values.astype(int)
     return X, y
