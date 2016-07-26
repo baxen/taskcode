@@ -223,6 +223,9 @@ def derived(df, **kwargs):
             'acceleration', 'acceleration_x_rms', 'acceleration_y_rms', 'acceleration_x', 'acceleration_y']
 
     interval = pd.Timedelta(kwargs.pop('interval','10m')) # Length of interval for each output row
+    sub_interval = pd.Timedelta(kwargs.pop('subinterval','2m')) # Sub interval in which to sample derived quantities
+    dens = float(kwargs.pop('dens','1.0'))
+    n_sub = int(interval/(dens*sub_interval))
 
     rows = []
 
@@ -232,8 +235,6 @@ def derived(df, **kwargs):
     chunk = df[(df.position_update_timestamp > lower) & (df.position_update_timestamp < upper)].copy()
 
     while len(chunk):
-        # Calculate values in the sub intervals for this chunk.
-
         # Stat variables from some columns
         means = pd.Series(chunk[col].mean() for col in cols)
         stds = pd.Series(chunk[col].std() for col in cols)
@@ -245,10 +246,26 @@ def derived(df, **kwargs):
             fft_max.extend(maxes)
             fft_period.extend(periods)
         fft_max, fft_period = pd.Series(fft_max), pd.Series(fft_period)
+
+        # More velocity variables (over longer periods)
+        mean_x = chunk.position_x.groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/sub_interval).astype(int)).mean()
+        mean_y = chunk.position_x.groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/sub_interval).astype(int)).mean()
+
+        # For now matching quality requirement from chunked
+        moveon=False
+        if (len(mean_x) < n_sub) or (mean_x.var()==0.0):
+            moveon = True
+
+        # Trend velocity, also include ratio to shorter average.
+        trend_velocities = [distance(mean_x.diff()).mean(), distance(mean_y.diff()).mean(), distance(mean_x.diff(), mean_y.diff()).mean()]
+        trend_velocities.append(trend_velocities[0]/means[6] if means[6] >= 0 else 1.0)
+        trend_velocities.append(trend_velocities[1]/means[7] if means[7] >= 0 else 1.0)
+        trend_velocities.append(trend_velocities[2]/means[5] if means[5] >= 0 else 1.0)
+        trend_velocities = pd.Series(trend_velocities)
         
-        features = pd.concat((fft_max, fft_period, means, stds))
+        features = pd.concat((fft_max, fft_period, trend_velocities, means, stds))
         features.index = range(len(features))
-        rows.append(features)
+        if not moveon: rows.append(features)
 
         # Get the next chunk
         lower,upper = lower+interval, upper+interval
