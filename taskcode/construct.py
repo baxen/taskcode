@@ -9,6 +9,7 @@ import glob
 import pickle
 import itertools
 import sys
+import quantiles
 import pandas as pd
 import numpy as np
 import scipy.signal as signal
@@ -24,7 +25,7 @@ def gps_transform(func):
     '''
     def feature_func(df, **kwargs):
         # These are all the same so max just gets a single value
-        default_features = pd.Series(dict(label=df.task_label.max(), name=df.name.max(),
+        default_features = dict(label=df.task_label.max(), name=df.name.max(),
                                           start_time=df.start_time.max(), end_time=df.end_time.max(),
                                           skill=df.skill.max(), room=df.room.max(), last_task=df.last_task.max(),
                                           ntask_1_completed=df.ntask_1_completed.max(),ntask_2_completed=df.ntask_2_completed.max(),
@@ -32,7 +33,11 @@ def gps_transform(func):
                                           ntask_5_completed=df.ntask_5_completed.max(),ntask_6_completed=df.ntask_6_completed.max(),
                                           ntask_7_completed=df.ntask_7_completed.max(),ntask_8_completed=df.ntask_8_completed.max(),
                                           ntask_9_completed=df.ntask_9_completed.max(),ntask_10_completed=df.ntask_10_completed.max(),
-                                          ntask_11_completed=df.ntask_11_completed.max()))
+                                          ntask_11_completed=df.ntask_11_completed.max())
+        dimension = 10
+        dict1 = quantiles.quantile_dwell(df, dimension)
+        default_features.update(dict1)
+        default_features = pd.Series(default_features)
         rows = []
         for row in func(df, **kwargs):
             rows.append(pd.concat((default_features, row)))
@@ -305,6 +310,9 @@ def create_gps_pickles():
     df['name'] = df.first_name + ' ' + df.last_name
     gps['name'] = gps.node_id.map(nodes)
 
+    boundaries = quantiles.quantile_definer(10, gps) # 10 quantiles by default
+    quantiles.boundaries = boundaries
+
     # Build an extension to the df by creating feature vectors from (transformed) x,y,z data
     for index, name, start, end, task, room in itertools.izip(df.index, df.name, df.start_time, df.end_time, df.task, df.room):
         sys.stdout.write('Processing task number {0} out of {1}\r'.format(index,df.index[-1]))
@@ -330,6 +338,7 @@ def create_gps_pickles():
         sub_gps['last_task'] = last_task
         for i in finished_task_counts.index:
             sub_gps['ntask_'+str(i)+'_completed'] = finished_task_counts[i]
+        sub_gps = quantiles.quantiler(sub_gps, boundaries)
         sub_gps.to_pickle('data/gps_{:06d}.pkl'.format(index))
     print
 
@@ -371,7 +380,9 @@ def load_tasks(gps_reduce='chunked', accel_reduce=None, interval='60m', subinter
 
 
 def to_array(df):
-    df = df.drop(['end_time','name','skill','start_time','room'],axis=1).astype(float)
+    y = df.label.values.astype(int)
+    df = df.drop(['label','end_time','name','skill','start_time','room'],axis=1).astype(float)
+    df[df.isnull()] = 0.0
 
     # Short term, use only tasks with more than min_count examples
     min_count = 30
@@ -380,15 +391,6 @@ def to_array(df):
     labels_above_min = counts > min_count
     df = df[df.label.isin(labels_above_min[labels_above_min].index)]
     #df = df[df.label.isin([2,3,4])]
-    y = df.label.values.astype(int)
-    
-    df_sr = df.iloc[:,253:]
-    df_no_se = df.iloc[:,13:133]
-    df_hist = df.iloc[:,1:13]
-    #df=df_no_se
-    df=pd.concat((df_hist,df_no_se,df_sr),axis=1)
-    #df=pd.concat((df_no_se,df_sr),axis=1)
-    df[df.isnull()] = 0.0
     X = df.astype(float)
     return X, y
 
