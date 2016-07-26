@@ -28,7 +28,7 @@ def train(optimize=False, cv=10):
                       "learning_rate": np.linspace(0.01, 0.41, 5)}
         classifier, score = optimized_classifier(X_train, y_train, ensemble.GradientBoostingClassifier(), gbc_params, n_iter=60)
     else:
-        gbc = ensemble.GradientBoostingClassifier(init=None, learning_rate=0.2,
+        gbc = ensemble.GradientBoostingClassifier(init=None, learning_rate=0.3,
                                                   loss='deviance', max_depth=4, max_features=21,
                                                   max_leaf_nodes=None, min_samples_leaf=1,
                                                   min_samples_split=100, min_weight_fraction_leaf=0.0,
