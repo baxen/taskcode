@@ -375,8 +375,10 @@ def to_array(df):
     X = df.astype(float)
     return X, y
 
-   
- 
+def missingness(df,q=0.1):
+    timeD = pd.Series(df['position_update_timestamp'].iloc[1:len(df)].values - df['position_update_timestamp'].iloc[0:(len(df)-1)].values)
+    return timeD.quantile(np.arange(0.0,1.0+q,q))
+    
 def main():
     '''
     Make the gps pickles which are used by other methods.
