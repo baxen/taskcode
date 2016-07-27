@@ -118,9 +118,8 @@
 <script>
 
 function animatedGPS(fname, divid) {
-    var margin = {top: 20, right: 20, bottom: 30, left: 40},
-        width = 600 - margin.left - margin.right,
-        height = 300 - margin.top - margin.bottom;
+    var width = 600;
+    var height = 300;
 
     var x = d3.scale.linear()
         .range([0, width]);
@@ -132,11 +131,14 @@ function animatedGPS(fname, divid) {
         .x(function(d) { return x(d.x); })
         .y(function(d) { return y(d.y); });
 
-    var svg = d3.select(divid).append("svg")
-        .attr("width", width + margin.left + margin.right)
-        .attr("height", height + margin.top + margin.bottom)
-      .append("g")
-        .attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+    var svg = d3.select(divid)
+      .append("div")
+        .classed("svg-container", true) // container class for responsiveness
+      .append("svg")
+        //responsive SVG needs these 2 attributes and no width and height attr
+        .attr("preserveAspectRatio", "xMinYMin meet")
+        .attr("viewBox", "0 0 " + width + " " + height)
+        .classed("svg-content-responsive", true);
 
     d3.tsv(fname, function(error, data) {
       if (error) throw error;
@@ -183,7 +185,7 @@ function animatedGPS(fname, divid) {
     });
 
     return svg;
-};
+}
 
 var vis1 = animatedGPS("data_000349.tsv", "#vis-1");
 var vis2 = animatedGPS("data_000378.tsv", "#vis-2");
