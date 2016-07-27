@@ -39,7 +39,7 @@ label {
     display: inline-block;
     position: relative;
     width: 100%;
-    padding-bottom: 100%; /* aspect ratio */
+    padding-bottom: 50%; /* aspect ratio */
     vertical-align: top;
     overflow: hidden;
 }
@@ -192,6 +192,7 @@ a.pure-button-primary {
 /* This is the subheading that appears on the blue section */
 .splash-subhead {
     color: white;
+    font-weight: 500;
     letter-spacing: 0.05em;
 }
 
@@ -208,6 +209,12 @@ a.pure-button-primary {
     z-index: 2;
     background: white;
 
+}
+
+.content {
+    width:90%;
+    max-width:1000px;
+    margin: auto;
 }
 
 .separator {
