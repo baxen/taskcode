@@ -16,12 +16,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/pure/0.6.0/grids-responsive.css">
 <!--<![endif]-->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/fontawesome/4.6.3/css/font-awesome.min.css">
-<!--[if lte IE 8]>
-    <link rel="stylesheet" href="css/layouts/marketing-old-ie.css">
-<![endif]-->
-<!--[if gt IE 8]><!-->
-    <link rel="stylesheet" href="css/layouts/marketing.css">
-<!--<![endif]-->
+<link rel="stylesheet" href="css/taskcode.css">
+
 
 <link href='https://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'>
 <link href='https://fonts.googleapis.com/css?family=Quantico:700' rel='stylesheet' type='text/css'>    
@@ -29,7 +25,7 @@
 
 </head>
 
-
+nn
 <body>
 <!--
 <div class="header">
@@ -49,80 +45,57 @@
     <div class="splash">
         <h1 class="splash-head">TASKCODE</h1>
         <p class="splash-subhead">
-            Lorem ipsum dolor sit amet, consectetur adipisicing elit.
+          Predicting construction worker tasks from GPS data.
         </p>
     </div>
 </div>
 
 <div class="content-wrapper">
     <div class="content">
-        <h2 class="content-head is-center">Excepteur sint occaecat cupidatat.</h2>
-
-        <div class="pure-g">
-            <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4">
-                <h3 class="content-subhead">
-                    Testing 1
-                </h3>
-                <p>
-                    Phasellus eget enim eu lectus faucibus vestibulum. Suspendisse sodales pellentesque elementum.
-                </p>
-            </div>
-            <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4">
-                <h3 class="content-subhead">
-                   Testing 2
-                </h3>
-                <p>
-                    Phasellus eget enim eu lectus faucibus vestibulum. Suspendisse sodales pellentesque elementum.
-                </p>
-            </div>
-            <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4">
-                <h3 class="content-subhead">
-                   Testing 3
-                </h3>
-                <p>
-                    Phasellus eget enim eu lectus faucibus vestibulum. Suspendisse sodales pellentesque elementum.
-                </p>
-            </div>
-            <div class="l-box pure-u-1 pure-u-md-1-2 pure-u-lg-1-4">
-                <h3 class="content-subhead">
-                   Testing 4
-                </h3>
-                <p>
-                    Phasellus eget enim eu lectus faucibus vestibulum. Suspendisse sodales pellentesque elementum.
-                </p>
-            </div>
-        </div>
-    </div>
-
-    <div class="ribbon l-box-lrg pure-g">
-        <div class="l-box-lrg is-center pure-u-1 pure-u-md-1-2 pure-u-lg-2-5">
-            <img class="pure-img-responsive" alt="File Icons" width="300" src="img/common/file-icons.png">
-        </div>
-        <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-3-5">
-
-            <h2 class="content-head content-head-ribbon">Laboris nisi ut aliquip.</h2>
-
-            <p>
-                Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam,
-                quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo
-                consequat. Duis aute irure dolor.
-            </p>
-        </div>
-    </div>
-
-    <div class="content">
-        <h2 class="content-head is-center">Dolore magna aliqua. Uis aute irure.</h2>
+        <h2 class="content-head is-center">Task Suggestion</h2>
 
         <div class="pure-g">
             <div class="l-box-lrg pure-u-1 pure-u-md-3-5">
-	      <div id="vis"></div>
+	      <div id="vis-1"></div>
             </div>
 	    <div class="l-box-lrg pure-u-1 pure-u-md-2-5">
                 <h4>More Information</h4>
                 <p>
-                    Lorem ipsum dolor sit amet, consectetur adipisicing elit, sed do eiusmod
-                    tempor incididunt ut labore et dolore magna aliqua.
+		  Example graphic.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="separator">.</div>
+
+    <div class="content l-box-lrg pure-g">
+        <div class="l-box-lrg is-center pure-u-1 pure-u-md-1-2 pure-u-lg-3-5">
+            <img class="pure-img-responsive" alt="File Icons" width="600" src="img/rooms.png">
+        </div>
+        <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-2-5">
+
+            <h2 class="content-head">Automatic Labels</h2>
+
+            <p>
+	      Predict several unique tasks split among many work locations.
+            </p>
+        </div>
+    </div>
+
+    <div class="separator">.</div>
+
+    <div class="content">
+        <h2 class="content-head is-center">Another Title</h2>
+
+        <div class="pure-g">
+            <div class="l-box-lrg pure-u-1 pure-u-md-3-5">
+	      <div id="vis-2"></div>
+            </div>
+	    <div class="l-box-lrg pure-u-1 pure-u-md-2-5">
+                <h4>More Information</h4>
+                <p>
+		  Example graphic.
                 </p>
             </div>
         </div>
@@ -135,12 +108,87 @@
 -->
 </div>
 <script>
-var vis=d3.select("#vis").append("svg").attr("width",200).attr("height",200);
-vis.append("circle")
-   .attr("cx",25)
-   .attr("cy",25)
-   .attr("r",25)
-   .style("fill","purple");
+    var w = 700;
+    var h = 300;
+
+    var svg = d3.select("#vis-1")
+      .append("svg")
+      .attr("width", w)
+      .attr("height", h);
+
+    var data = d3.range(11).map(function(){return Math.random()*10})
+    var x = d3.scale.linear().domain([0, 10]).range([0, 700]);
+    var y = d3.scale.linear().domain([0, 10]).range([10, 290]);
+    var line = d3.svg.line()
+      .interpolate("cardinal")
+      .x(function(d,i) {return x(i);})
+      .y(function(d) {return y(d);})
+
+    var path = svg.append("path")
+      .attr("d", line(data))
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", "2")
+      .attr("fill", "none");
+
+    var totalLength = path.node().getTotalLength();
+
+    path
+      .attr("stroke-dasharray", totalLength + " " + totalLength)
+      .attr("stroke-dashoffset", totalLength)
+      .transition()
+        .duration(2000)
+        .ease("linear")
+        .attr("stroke-dashoffset", 0);
+
+    svg.on("click", function(){
+      path      
+        .transition()
+        .duration(2000)
+        .ease("linear")
+        .attr("stroke-dashoffset", totalLength);
+    })
+</script>
+
+<script>
+    var w = 700;
+    var h = 300;
+
+    var svg = d3.select("#vis-2")
+      .append("svg")
+      .attr("width", w)
+      .attr("height", h);
+
+    var data = d3.range(11).map(function(){return Math.random()*10})
+    var x = d3.scale.linear().domain([0, 10]).range([0, 700]);
+    var y = d3.scale.linear().domain([0, 10]).range([10, 290]);
+    var line = d3.svg.line()
+      .interpolate("cardinal")
+      .x(function(d,i) {return x(i);})
+      .y(function(d) {return y(d);})
+
+    var path = svg.append("path")
+      .attr("d", line(data))
+      .attr("stroke", "steelblue")
+      .attr("stroke-width", "2")
+      .attr("fill", "none");
+
+    var totalLength = path.node().getTotalLength();
+
+    path
+      .attr("stroke-dasharray", totalLength + " " + totalLength)
+      .attr("stroke-dashoffset", totalLength)
+      .transition()
+        .duration(2000)
+        .ease("linear")
+        .attr("stroke-dashoffset", 0);
+
+    svg.on("click", function(){
+      path      
+        .transition()
+        .duration(2000)
+        .ease("linear")
+        .attr("stroke-dashoffset", totalLength);
+    })
 </script>
 </body>
 
