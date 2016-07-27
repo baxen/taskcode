@@ -1,7 +1,8 @@
-<!doctype html>
+<!DOCTYPE html>
+<meta charset="utf-8">
+
 <html lang="en">
 <head>
-<meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="A layout example that shows off a responsive product landing page.">
 
@@ -24,7 +25,7 @@
 
 <link href='https://fonts.googleapis.com/css?family=Roboto:300' rel='stylesheet' type='text/css'>
 <link href='https://fonts.googleapis.com/css?family=Quantico:700' rel='stylesheet' type='text/css'>    
-<script src="https://d3js.org/d3.v4.min.js"></script>
+<script src="https://d3js.org/d3.v3.min.js"></script>
 
 </head>
 
@@ -116,22 +117,6 @@
         <div class="pure-g">
             <div class="l-box-lrg pure-u-1 pure-u-md-3-5">
 	      <div id="vis"></div>
-	      <script type="text/javascript">
-                var sampleSVG = d3.select("#viz")
-                .append("svg")
-                .attr("width", 100)
-                .attr("height", 100);    
-        
-		sampleSVG.append("circle")
-                .style("stroke", "gray")
-                .style("fill", "white")
-                .attr("r", 40)
-                .attr("cx", 50)
-                .attr("cy", 50)
-                .on("mouseover", function(){d3.select(this).style("fill", "aliceblue");})
-                .on("mouseout", function(){d3.select(this).style("fill", "white");});
-            
-              </script>
             </div>
 	    <div class="l-box-lrg pure-u-1 pure-u-md-2-5">
                 <h4>More Information</h4>
@@ -149,6 +134,15 @@
     </div>
 -->
 </div>
-
+<script>
+var vis=d3.select("#vis").append("svg").attr("width",200).attr("height",200);
+vis.append("circle")
+   .attr("cx",25)
+   .attr("cy",25)
+   .attr("r",25)
+   .style("fill","purple");
+</script>
 </body>
+
+
 </html>
