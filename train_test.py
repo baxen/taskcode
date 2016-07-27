@@ -11,7 +11,7 @@ from IPython import embed
 from taskcode import construct
     
 def train(optimize=False, cv=10):
-    df = construct.load_tasks(cache=True, interval='30m', categories=True, gps_reduce='derived',q=0.01,dens=0.5)
+    df = construct.load_tasks(cache=True, interval='30m', categories=True, gps_reduce='derived',q=0.01,dens=0.0)
     #df = construct.load_tasks(cache=True, interval='30m', categories=True)
     X, y = construct.to_array(df)
 

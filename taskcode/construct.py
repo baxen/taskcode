@@ -196,7 +196,7 @@ def derived(df, **kwargs):
     '''
     
     # Require a minimum number of gps points
-    print len(df)
+    # print len(df)
     if len(df) < 10:
         return []
 
@@ -228,10 +228,9 @@ def derived(df, **kwargs):
             'acceleration', 'acceleration_x_rms', 'acceleration_y_rms', 'acceleration_x', 'acceleration_y']
 
     interval = pd.Timedelta(kwargs.pop('interval','10m')) # Length of interval for each output row
-    sub_interval = pd.Timedelta(kwargs.pop('subinterval','2m')) # Sub interval in which to sample derived quantities
+    sub_interval = pd.Timedelta(kwargs.pop('subinterval','1m')) # Sub interval in which to sample derived quantities
     dens = float(kwargs.pop('dens','1.0'))
     q = float(kwargs.pop('q','0.1'))
-    n_sub = dens*int(interval/sub_interval)
 
     rows = []
 
@@ -257,11 +256,11 @@ def derived(df, **kwargs):
         mean_x = chunk.position_x.groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/sub_interval).astype(int)).mean()
         mean_y = chunk.position_x.groupby(((chunk.position_update_timestamp - chunk.position_update_timestamp.min())/sub_interval).astype(int)).mean()
 
-        # For now matching quality requirement from chunked
+        # data quality requirement is that some % of minutes in task have data
         moveon=False
-        if (len(mean_x) < n_sub) or (mean_x.var()==0.0):
+        max_obs = int(np.ceil((chunk.position_update_timestamp.max()-chunk.position_update_timestamp.min())/sub_interval))
+        if (len(mean_x) < dens*max_obs) or (mean_x.var()==0.0):
             moveon = True
-
         # Trend velocity, also include ratio to shorter average.
         trend_velocities = [distance(mean_x.diff()).mean(), distance(mean_y.diff()).mean(), distance(mean_x.diff(), mean_y.diff()).mean()]
         trend_velocities.append(trend_velocities[0]/means[6] if means[6] >= 0 else 1.0)
