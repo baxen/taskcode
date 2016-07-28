@@ -193,7 +193,7 @@ function animatedGPS(fname, divid) {
 var vis1 = animatedGPS("data_000349.tsv", "#vis-1");
 var vis2 = animatedGPS("data_000378.tsv", "#vis-2");
 
-var width = 600;
+var width = 300;
 var height = 300;
 
 var colors = [
@@ -208,19 +208,19 @@ var colors = [
 var probsJSON =
 {
 "children": [
-{"name": "Taskcode 1", "probability": 70},
-{"name": "Taskcode 2", "probability": 20},
-{"name": "Taskcode 2", "probability": 10}
+{"name": "Taskcode 1", "probability": 60},
+{"name": "Taskcode 2", "probability": 25},
+{"name": "Taskcode 3", "probability": 15}
 ]
 };
 
 var pack = d3.layout.pack()
-.size([500, 500])
+.size([width, height])
 .padding(10)
 .value(function(d) { return d.probability; });
 var packCalculations = pack.nodes(probsJSON);
 
-var svg = d3.select("#vis-3").append("div").classed("svg-container", true)
+var svg = d3.select("#vis-3").append("div").classed("svg-container-square", true)
 .append("svg").attr("preserveAspectRatio", "xMinYMin meet")
 .attr("viewBox", "0 0 " + width + " " + height).classed("svg-content-responsive", true)
 .selectAll("g").data(packCalculations).enter();
@@ -233,20 +233,22 @@ g.append("circle")
 .on('mouseout',function() { d3.select(this).transition().duration(100).attr("opacity",1)})
 .attr("transform", function(d,i){return "translate(" + d.x + "," + d.y + ")"});
 g.append("text")
-.attr("x", -35)
-.attr("fill", "grey")
+.attr("x", -40).attr("y",5)
+.attr("fill", "white")
 .text(function(d){return d.name})
 .attr("transform", function(d,i){return "translate(" + d.x + "," + d.y + ")"});
 
-var svg2 = d3.select("#vis-4").append("div").classed("svg-container", true)
+var svg2 = d3.select("#vis-4").append("div").classed("svg-container-short", true)
 .append("svg").attr("preserveAspectRatio", "xMinYMin meet")
-.attr("viewBox", "0 0 " + width + " " + height).classed("svg-content-responsive", true);
+.attr("viewBox", "0 0 " + width + " " + width/5).classed("svg-content-responsive", true);
 
-var rect = svg2.append("rect").attr("width",width).attr("height",100).attr("rx",10).attr("ry",10).style("fill","gray")
+var rect = svg2.append("rect").attr("rx",10).attr("ry",10).style("fill","gray").attr("width",0.8*width).attr("height",width/5)
+.attr("x",30)
 .on('mouseover',function() { d3.select(this).transition().duration(100).attr("opacity",0.5)})
-.on('mouseout',function() { d3.select(this).transition().duration(100).attr("opacity",1)});
+.on('mouseout',function() { d3.select(this).transition().duration(100).attr("opacity",1)})
+.attr("transform", "translate(" + this.x + "," + this.y + ")");
 
-var text = svg2.append("text").text("Taskcode not shown").attr("x",175).attr("y",50);
+var text = svg2.append("text").text("Taskcode not shown").attr("x",75).attr("y",35).attr("fill","white");
 
 </script>
 </body>
