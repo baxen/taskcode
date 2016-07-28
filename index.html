@@ -275,11 +275,15 @@ var svg = d3.select("#vis-3").append("div").classed("svg-container-square", true
 
 var g = svg.append("g");
 g.append("circle")
-.attr("r", function(d){return d.r})
+.attr("r", 0)
 .style("fill", function(d, i){return colors[i%6];})
 .on('mouseover',function() { d3.select(this).transition().duration(100).attr("opacity",0.5)})
 .on('mouseout',function() { d3.select(this).transition().duration(100).attr("opacity",1)})
-.attr("transform", function(d,i){return "translate(" + d.x + "," + d.y + ")"});
+.attr("transform", function(d,i){return "translate(" + d.x + "," + d.y + ")"})
+.transition()
+.duration(10000)
+.attr("r", function(d){return d.r});
+
 g.append("text")
 .attr("x", -40).attr("y",5)
 .attr("fill", "white")
