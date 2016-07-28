@@ -55,6 +55,10 @@ def train(optimize=False, cv=10):
     return classifier.predict_proba(X_test)
 
 def initialize_prob_df():
+    '''
+    Initializes a probability distribution data frame using train()
+    Returns a DataFrame with a series of probability arrays sorted in descending order
+    '''
     df_p = pd.DataFrame()
     prob_data = train(optimize = False, cv = 10)
     prob_series = []
@@ -76,6 +80,9 @@ def task_threshold(prob_array, threshold):
     return index
 
 def task_suggestion_conf(threshold):
+    '''
+    Calculates various confidence parameters associated with task suggestion
+    '''
     df = initialize_prob_df()
     df['threshold_set_length'] = df['prob_dist'].apply(lambda x: task_threshold(x, threshold))
     #Calculate the total length of the set
@@ -85,12 +92,15 @@ def task_suggestion_conf(threshold):
     #confidence sets that are only of length 1
     single_set_percentage = float(len(df[df['threshold_set_length'] == 1]))/total_length*100
     single_set_percentage = "{0:.1f}".format(single_set_percentage)
+    #Calculate the mean number of tasks suggested for 99% confidence
     average_set_length = df['threshold_set_length'].mean()
     average_set_length = "{0:.1f}".format(average_set_length)
+    #Calculate the maximum number of suggested tasks for 95% of all probability arrays
     df = df.sort_values(by = 'threshold_set_length', ascending = True)
     df.index = range(len(df))
     df2 = df.iloc[0:length_95_percent, :]
     set_95_max = df2['threshold_set_length'].max()
+    #Print the results
     print str(single_set_percentage) + '% of the 99% confidence sets contain only a single task suggestion.'
     print 'On average, the 99% confidence set contains ' + str(average_set_length) + ' elements.'
     print '95% of the 99% confidence sets contain ' + str(set_95_max) + ' or fewer task suggestions.'
