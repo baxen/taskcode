@@ -91,7 +91,11 @@ label {
     text-align: center;
 }
 
-
+.vert-center {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
 
 /*
  * -- PURE FORM STYLES --
@@ -206,7 +210,7 @@ a.pure-button-primary {
     margin: 0 auto;
     font-size: 1px;
     color: rgba(0, 0, 0, 0);
-    line-height: 1px;
+    line-height: 2px;
     
     background-color: rgb(200,200,200);
     margin-top: -6px;

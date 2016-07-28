@@ -35,20 +35,6 @@
 
 </style>
 <body>
-<!--
-<div class="header">
-    <div class="home-menu pure-menu pure-menu-horizontal pure-menu-fixed">
-        <a class="pure-menu-heading" href="">Your Site</a>
-
-        <ul class="pure-menu-list">
-            <li class="pure-menu-item pure-menu-selected"><a href="#" class="pure-menu-link">Home</a></li>
-            <li class="pure-menu-item"><a href="#" class="pure-menu-link">Tour</a></li>
-            <li class="pure-menu-item"><a href="#" class="pure-menu-link">Sign Up</a></li>
-        </ul>
-    </div>
-</div>
--->
-
 <div class="splash-container">
     <div class="splash">
         <h1 class="splash-head">TASKCODE</h1>
@@ -60,42 +46,95 @@
 
 <div class="content-wrapper">
     <div class="content">
-        <h2 class="content-head is-center">GPS History</h2>
-	<div id="vis-1"></div>
-	<p class="is-center">
-	  Can a machine learn to tell what someone was working on at a construction site using high-accuracy GPS data?
-	</p>
-    </div>
-
-    <div class="separator">.</div>
-
-    <div class="content">
-        <h2 class="content-head is-center">Task Suggestion</h2>
+        <h2 class="content-head is-center">Automatic Task Suggestion</h2>
 
         <div class="pure-g">
             <div class="l-box-lrg pure-u-1 pure-u-md-3-5">
-	      <div id="vis-2"></div>
+	      <div id="vis-1"></div>
             </div>
 	    <div class="l-box-lrg pure-u-1 pure-u-md-2-5">
-	      <div id="vis-3" class="is-center" style="max-width:200px;margin:auto"></div>
-	      <div id="vis-4" class="is-center" style="max-width:200px;margin:auto"></div>
+	      <div id="vis-3" class="is-center" style="max-width:250px;margin:auto"></div>
+	      <div id="vis-4" class="is-center" style="max-width:250px;margin:auto"></div>
             </div>
         </div>
 
 	<p class="is-center">
-	  After a task is completed, we can algorithmically determine a short list of which kind of task it might have been. A worker would just have to tap the right option.
+	  After a task is complete, we can determine a short list of which kind of task it might have been. Task entry with one just one tap.
+	</p>
+    </div>
+
+    <div class="separator">.</div>
+
+    <div class="content l-box-lrg pure-g">
+        <div class="l-box-lrg is-center pure-u-1 pure-u-md-1-2 pure-u-lg-3-5">
+            <img class="pure-img-responsive" alt="worker" width="600" src="img/big_construction_site.jpg">
+        </div>
+        <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-2-5">
+
+            <h2 class="content-head">Value of Labor</h2>
+
+            <p>
+	      Every site requires a complex system of labor tasks to finish the job. Keeping track of each can improve lead to better cost estimation and improve the efficiency of construction.
+            </p>
+        </div>
+    </div>
+
+    <div class="separator">.</div>
+
+    <div class="content">
+        <h2 class="content-head is-center">GPS Technology</h2>
+        <div class="pure-g">
+	    <div class="l-box-lrg pure-u-1 pure-u-md-1-2">
+              <img class="pure-img-responsive" alt="GPS Technology" width="600" src="img/big_construction_site.jpg">
+            </div>
+            <div class="l-box-lrg pure-u-1 pure-u-md-1-2">
+	      <div id="vis-2"></div>
+            </div>
+	</div>
+	<p class="is-center"> 
+	  Broadband GPS gives an accurate location every second to give the system enough information to figure out the work in progress.
 	</p>
     </div>
 
     <div class="separator">.</div>
 
     <div class="content">
-        <h2 class="content-head is-center">Accurate Predictions</h2>
-	<p class="is-center"> 
-	  Using N weeks worth of collected data, the top 3 predicted task IDs contain the right task 99% of the time. Removing the difficulty of looking up task IDs and the high chance of errors could dramatically increase the accuracy and reliability of the logging system. Given enough data, it could even be possible to automatically select the right task without user feedback.
-	</p>
-      
+      <h2 class="content-head is-center">Accurate Predictions</h2>
+      <p class="is-center">
+	Will get filled in with accuracy ASAP!
+      </p>
     </div>
+
+    <div class="separator">.</div>
+
+    <div class="content">
+      <h2 class="content-head is-center">Approach</h2>
+      <p class="is-center">
+	A few minutes of GPS data tells a lot about what kind of work is getting done. 
+      </p>
+      <div class="pure-g">
+	<div class="pure-u-1 pure-u-md-1-2">
+	  <h4 class="is-center">Information</h4>
+	  <ul>
+	    <li> Time spent in each corner of a room </li>
+	    <li> Speed of movement in one direction or back and forth </li>
+	    <li> What was done nearby before starting </li>
+	  </ul>
+	</div>
+	<div class="pure-u-1 pure-u-md-1-2">
+	  <h4 class="is-center">Understanding</h4>
+	  <ul>
+	    <li> GPS data extracted into those quantities</li>
+	    <li> Machine learning algorithm discovers patterns</li>
+	    <li> Provides predictions for each task</li>
+	  </ul>
+	</div>
+	<div class="pure-u-1 pure-u-md-1-3">
+
+	</div>
+      </div>
+    </div>
+
     <div class="separator">.</div>
 
     <div class="content l-box-lrg pure-g">
@@ -104,19 +143,30 @@
         </div>
         <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-2-5">
 
-            <h2 class="content-head">Complex System</h2>
+            <h2 class="content-head">Complex Understanding</h2>
 
-            <p>
+            <p class="vert-center">
 	      These results were possible with about ten different tasks and dozens of different individual working locations.
             </p>
         </div>
     </div>
 
-<!--
-    <div class="footer l-box is-center">
-        View the source of this layout to learn more. Made with love by the YUI Team.
+    <div class="separator">.</div>
+
+    <div class="content l-box-lrg pure-g">
+        <div class="pure-u-1 pure-u-md-1-2 pure-u-lg-2-5">
+
+            <h2 class="content-head">Robust System</h2>
+
+            <p class="vert-center">
+	      Even significant gaps in data recording don't compromise the results of the system.
+            </p>
+        </div>
+        <div class="l-box-lrg is-center pure-u-1 pure-u-md-1-2 pure-u-lg-3-5 vert-center">
+            <img class="pure-img-responsive" alt="File Icons" width="600" src="img/missingness.png">
+        </div>
+
     </div>
--->
 </div>
 <script>
 
