@@ -16,7 +16,7 @@ def train(optimize=False, cv=10):
     Determines optimized classifier using select algorithm and then returns
     predict_probability array for the data frame
     '''
-    df = construct.load_tasks(cache=True, interval='30m', categories=True)
+    df = construct.load_tasks(cache=True, interval='30m', categories=True, gps_reduce = 'derived', q = 0.1, dens = 0.2)
     X, y = construct.to_array(df)
     X_train, X_test, y_train, y_test = train_test_split(X, y)
 
