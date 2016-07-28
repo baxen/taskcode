@@ -61,12 +61,8 @@ def train(optimize=False, cv=10):
         y_train, y_test = y[train_i], y[test_i]
         classifier.fit(X_train, y_train)
         probs.append(classifier.predict_proba(X_test)[0])
-    try:
-        probs = pd.DataFrame(np.hstack((y,np.array(probs))),columns=['Truth','1','2','3','4','5','6','10','11'])
-        probs.to_pickle('data/loo_results.pkl')
-    except Exception:
-        pass
-    embed()
+    probs = pd.DataFrame(np.hstack((np.atleast_1d(y).T,np.array(probs))),columns=['Truth','1','2','3','4','5','6','10','11'])
+    probs.to_pickle('data/loo_results.pkl')
     return probs
         
 def initialize_prob_df():
