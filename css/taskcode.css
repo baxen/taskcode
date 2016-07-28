@@ -97,6 +97,12 @@ label {
     justify-content: center;
 }
 
+.hor-center {
+    display: flex;
+    flex-direction: row;
+    justify-content: center;
+}
+
 /*
  * -- PURE FORM STYLES --
  * Style the form inputs and labels
