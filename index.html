@@ -196,7 +196,7 @@ var vis2 = animatedGPS("data_000378.tsv", "#vis-2");
 var width = 600;
 var height = 300;
 
-<!---
+<!--
 var colors = [
 "white",
 "blue",
@@ -238,7 +238,7 @@ g.append("text")
 .attr("fill", "grey")
 .text(function(d){return d.name})
 .attr("transform", function(d,i){return "translate(" + d.x + "," + d.y + ")"});
---->
+-->
 
 var svg2 = d3.select("vis-4").append("div").classed("svg-container", true)
 .append("svg").attr("preserveAspectRatio", "xMinYMin meet")
