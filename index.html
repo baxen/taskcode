@@ -240,7 +240,7 @@ g.append("text")
 .attr("transform", function(d,i){return "translate(" + d.x + "," + d.y + ")"});
 -->
 
-var svg2 = d3.select("vis-4").append("div").classed("svg-container", true)
+var svg2 = d3.select("#vis-4").append("div").classed("svg-container", true)
 .append("svg").attr("preserveAspectRatio", "xMinYMin meet")
 .attr("viewBox", "0 0 " + width + " " + height).classed("svg-content-responsive", true);
 
