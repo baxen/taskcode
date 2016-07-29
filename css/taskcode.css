@@ -97,6 +97,13 @@ label {
     justify-content: center;
 }
 
+.vert-left {
+    display: flex;
+    flex-direction: column;
+    justify-content: left;
+}
+
+
 .hor-center {
     display: flex;
     flex-direction: row;
