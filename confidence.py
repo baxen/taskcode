@@ -1,8 +1,9 @@
 import argparse
+import sys
 import numpy as np
 import pandas as pd
 
-from sklearn.cross_validation import cross_val_score, StratifiedShuffleSplit, train_test_split
+from sklearn.cross_validation import cross_val_score, StratifiedShuffleSplit, train_test_split, LeaveOneOut
 from sklearn.pipeline import make_pipeline
 from sklearn import ensemble, preprocessing
 from sklearn.metrics import f1_score, confusion_matrix
@@ -16,9 +17,8 @@ def train(optimize=False, cv=10):
     Determines optimized classifier using select algorithm and then returns
     predict_probability array for the data frame
     '''
-    df = construct.load_tasks(cache=True, interval='30m', categories=True)
+    df = construct.load_tasks(cache=True, interval='30m', categories=True, gps_reduce = 'derived', q = 0.01, dens = 0.2)
     X, y = construct.to_array(df)
-    X_train, X_test, y_train, y_test = train_test_split(X, y)
 
     # If we tell this one to optimize, we do a quick narrowly focused optimization
     # to pick a classifier
@@ -41,7 +41,7 @@ def train(optimize=False, cv=10):
 
     # Now use cross validation to measure f1/accuracy with a confidence interval
 
-    scores = cross_val_score(classifier, X, y, scoring='f1_weighted', cv=StratifiedShuffleSplit(y,n_iter=cv,test_size=0.5))
+    #scores = cross_val_score(classifier, X, y, scoring='f1_weighted', cv=StratifiedShuffleSplit(y,n_iter=cv,test_size=0.5))
     # skf = StratifiedKFold(y=y,n_folds=cv,shuffle=False)
     # for train_i, test_i in skf:
     #     y_train, y_test = y[train_i], y[test_i]
@@ -49,11 +49,22 @@ def train(optimize=False, cv=10):
     #     #train_counts = y_train.label.groupby(y_train.label).count()
     #     #test_counts = y_test.label.groupby(y_test.label).count()
     #     #print train_counts, test_counts
-    print scores
-    print "F1 Weighted: {:.3f} +/- {:.3f}".format(scores.mean(), scores.std()/np.sqrt(cv))
-    classifier.fit(X_train, y_train)
-    return classifier.predict_proba(X_test)
-
+    #print scores
+    #print "F1 Weighted: {:.3f} +/- {:.3f}".format(scores.mean(), scores.std()/np.sqrt(cv))
+    loo = LeaveOneOut(len(X))
+    probs = []
+    X = X.values
+    for train_i, test_i in loo:
+        sys.stdout.write('Leaving out task '+str(test_i[0])+'\r')
+        sys.stdout.flush()
+        X_train, X_test = X[train_i], X[test_i]
+        y_train, y_test = y[train_i], y[test_i]
+        classifier.fit(X_train, y_train)
+        probs.append(classifier.predict_proba(X_test)[0])
+    probs = pd.DataFrame(np.hstack((np.atleast_1d(y).T,np.array(probs))),columns=['Truth','1','2','3','4','5','6','10','11'])
+    probs.to_pickle('data/loo_results.pkl')
+    return probs
+        
 def initialize_prob_df():
     '''
     Initializes a probability distribution data frame using train()
@@ -104,3 +115,6 @@ def task_suggestion_conf(threshold):
     print str(single_set_percentage) + '% of the 99% confidence sets contain only a single task suggestion.'
     print 'On average, the 99% confidence set contains ' + str(average_set_length) + ' elements.'
     print '95% of the 99% confidence sets contain ' + str(set_95_max) + ' or fewer task suggestions.'
+
+if __name__ == '__main__':
+    task_suggestion_conf(0.01)
