@@ -1,9 +1,8 @@
 import argparse
-import sys
 import numpy as np
 import pandas as pd
 
-from sklearn.cross_validation import cross_val_score, StratifiedShuffleSplit, train_test_split, LeaveOneOut
+from sklearn.cross_validation import cross_val_score, StratifiedShuffleSplit, train_test_split
 from sklearn.pipeline import make_pipeline
 from sklearn import ensemble, preprocessing
 from sklearn.metrics import f1_score, confusion_matrix
@@ -11,14 +10,16 @@ from select_algorithm import optimized_classifier
 from IPython import embed
 
 from taskcode import construct
+from operator import itemgetter
 
 def train(optimize=False, cv=10):
     '''
     Determines optimized classifier using select algorithm and then returns
     predict_probability array for the data frame
     '''
-    df = construct.load_tasks(cache=True, interval='30m', categories=True, gps_reduce = 'derived', q = 0.01, dens = 0.2)
+    #df = construct.load_tasks(cache=True, interval='30m', categories=True, gps_reduce = 'derived', q = 0.01, dens = 0.2)
     X, y = construct.to_array(df)
+    X_train, X_test, y_train, y_test = train_test_split(X, y)
 
     # If we tell this one to optimize, we do a quick narrowly focused optimization
     # to pick a classifier
@@ -41,7 +42,7 @@ def train(optimize=False, cv=10):
 
     # Now use cross validation to measure f1/accuracy with a confidence interval
 
-    #scores = cross_val_score(classifier, X, y, scoring='f1_weighted', cv=StratifiedShuffleSplit(y,n_iter=cv,test_size=0.5))
+    scores = cross_val_score(classifier, X, y, scoring='f1_weighted', cv=StratifiedShuffleSplit(y,n_iter=cv,test_size=0.5))
     # skf = StratifiedKFold(y=y,n_folds=cv,shuffle=False)
     # for train_i, test_i in skf:
     #     y_train, y_test = y[train_i], y[test_i]
@@ -49,72 +50,91 @@ def train(optimize=False, cv=10):
     #     #train_counts = y_train.label.groupby(y_train.label).count()
     #     #test_counts = y_test.label.groupby(y_test.label).count()
     #     #print train_counts, test_counts
-    #print scores
-    #print "F1 Weighted: {:.3f} +/- {:.3f}".format(scores.mean(), scores.std()/np.sqrt(cv))
-    loo = LeaveOneOut(len(X))
-    probs = []
-    X = X.values
-    for train_i, test_i in loo:
-        sys.stdout.write('Leaving out task '+str(test_i[0])+'\r')
-        sys.stdout.flush()
-        X_train, X_test = X[train_i], X[test_i]
-        y_train, y_test = y[train_i], y[test_i]
-        classifier.fit(X_train, y_train)
-        probs.append(classifier.predict_proba(X_test)[0])
-    probs = pd.DataFrame(np.hstack((np.atleast_1d(y).T,np.array(probs))),columns=['Truth','1','2','3','4','5','6','10','11'])
-    probs.to_pickle('data/loo_results.pkl')
-    return probs
-        
+    print scores
+    print "F1 Weighted: {:.3f} +/- {:.3f}".format(scores.mean(), scores.std()/np.sqrt(cv))
+    classifier.fit(X_train, y_train)
+    return [classifier.predict_proba(X_test), y_test]
+
 def initialize_prob_df():
     '''
     Initializes a probability distribution data frame using train()
     Returns a DataFrame with a series of probability arrays sorted in descending order
     '''
+    lst = train(optimize = False, cv = 10)
+    prob_data = lst[0]
+    true_label = sorted(lst[1].unique())
     df_p = pd.DataFrame()
-    prob_data = train(optimize = False, cv = 10)
     prob_series = []
     for prob in prob_data:
-        prob_series.append(sorted(prob, reverse = True))
+        prob_dict = {}
+        for j,item in enumerate(prob):
+            prob_dict[item] = true_label[j]
+        prob_series.append(prob_dict)
     df_p['prob_dist'] = prob_series
     return df_p
 
-def task_threshold(prob_array, threshold):
+def sort_prob(df, threshold):
     '''
-    Takes an array of sorted probabilities and determines minimum number required for confidence
-    threshold
+    Takes a dataframe of sorted probabilities and determines minimum number required for confidence
+    threshold. Also determines if the 99% threshold includes the desired label
     '''
-    conf = 0
-    index = 0
-    while conf < threshold:
-        conf += prob_array[index]
-        index += 1
-    return index
+    keys = df.columns.tolist()
+    def constructor(lst):
+        columns = df.iloc[:, 1:9].columns.tolist()
+        return [list(x) for x in zip(*sorted(zip(lst, columns), reverse = True, key = itemgetter(0)))]
+    df['all_probs'] = map(list, df.iloc[:, 1:9].values)
+    df['sorted'] = map(constructor, df['all_probs'].values)
+    df['sorted_probs'] = df['sorted'].apply(lambda x: x[0])
+    df['sorted_tasks'] = df['sorted'].apply(lambda x: x[1])
+    def thresholder(lst, limit):
+        conf = 0
+        index = 0
+        while conf < limit:
+            conf += lst[index]
+            index += 1
+        return index
+    df['limit_to_threshold'] = df['sorted_probs'].apply(lambda x: thresholder(x, threshold))
+    tasks = df['sorted_tasks'].tolist()
+    limits = df['limit_to_threshold'].tolist()
+    task_set = []
+    for i,item in enumerate(tasks):
+        task_set.append(item[0:limits[i]])
+    df['task_set'] = task_set
+    def truthfulness(column1, column2):
+        column2 = [int(x) for x in column2]
+        if int(column1) in column2:
+            return True
+        else:
+            return False
+    df['goods'] = map(truthfulness, df.iloc[:, 0].values, df['task_set'].values)
+    return df
 
-def task_suggestion_conf(threshold):
+
+def task_suggestion_conf(df):
     '''
     Calculates various confidence parameters associated with task suggestion
     '''
-    df = initialize_prob_df()
-    df['threshold_set_length'] = df['prob_dist'].apply(lambda x: task_threshold(x, threshold))
     #Calculate the total length of the set
     total_length = float(len(df))
     length_95_percent = int(0.95*total_length)
     #Calculate the length of the single task set and determine the percentage of threhold%
     #confidence sets that are only of length 1
-    single_set_percentage = float(len(df[df['threshold_set_length'] == 1]))/total_length*100
+    single_set_percentage = float(len(df[df['limit_to_threshold'] == 1]))/total_length*100
     single_set_percentage = "{0:.1f}".format(single_set_percentage)
     #Calculate the mean number of tasks suggested for 99% confidence
-    average_set_length = df['threshold_set_length'].mean()
+    average_set_length = df['limit_to_threshold'].mean()
     average_set_length = "{0:.1f}".format(average_set_length)
     #Calculate the maximum number of suggested tasks for 95% of all probability arrays
-    df = df.sort_values(by = 'threshold_set_length', ascending = True)
+    df = df.sort_values(by = 'limit_to_threshold', ascending = True)
     df.index = range(len(df))
     df2 = df.iloc[0:length_95_percent, :]
-    set_95_max = df2['threshold_set_length'].max()
+    set_95_max = df2['limit_to_threshold'].max()
+    #Determine how many of the 99% confidence sets contain the correct classification
+    df_truth = df[df['goods'] == True]
+    true_length = len(df_truth)
+    true_percentage = float(true_length)/float(total_length)*100
     #Print the results
     print str(single_set_percentage) + '% of the 99% confidence sets contain only a single task suggestion.'
     print 'On average, the 99% confidence set contains ' + str(average_set_length) + ' elements.'
     print '95% of the 99% confidence sets contain ' + str(set_95_max) + ' or fewer task suggestions.'
-
-if __name__ == '__main__':
-    task_suggestion_conf(0.01)
+    print str(true_percentage) + '% of the 99% confidence sets contain the correct task as a suggestion'
